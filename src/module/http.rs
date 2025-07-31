@@ -82,7 +82,7 @@ impl HttpReader {
 
     fn new_internal(url: String, print_size: bool, user_agent: &str) -> Result<Self> {
         let client = Self::create_client(user_agent).with_context(|| "Failed to build client")?;
-        let parsed_url = url::Url::parse(&url).map_err(|e| anyhow!("Invalid URL: {}", e))?;
+        let parsed_url = url::Url::parse(&url).map_err(|e| anyhow!("Invalid URL: {e}"))?;
 
         let _host = parsed_url
             .host_str()
