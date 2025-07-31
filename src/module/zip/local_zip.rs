@@ -112,7 +112,9 @@ impl FileZipPayloadReader {
 
 impl<R: Read + Seek> Read for ZipPayloadReader<R> {
     fn read(&mut self, buf: &mut [u8]) -> IoResult<usize> {
-        let entry = if let Some(entry) = &self.current_entry { entry } else {
+        let entry = if let Some(entry) = &self.current_entry {
+            entry
+        } else {
             self.load_payload_entry()?;
             self.current_entry.as_ref().unwrap()
         };
@@ -136,7 +138,9 @@ impl<R: Read + Seek> Read for ZipPayloadReader<R> {
 
 impl<R: Read + Seek> Seek for ZipPayloadReader<R> {
     fn seek(&mut self, pos: SeekFrom) -> IoResult<u64> {
-        let entry = if let Some(entry) = &self.current_entry { entry } else {
+        let entry = if let Some(entry) = &self.current_entry {
+            entry
+        } else {
             self.load_payload_entry()?;
             self.current_entry.as_ref().unwrap()
         };

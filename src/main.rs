@@ -1,6 +1,12 @@
 #![warn(clippy::all, clippy::nursery, clippy::pedantic, clippy::cargo)]
 #![allow(clippy::multiple_crate_versions, reason = "Dependency")]
-#![allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap, clippy::cast_sign_loss, clippy::cast_precision_loss, reason = "TBD")]
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss,
+    reason = "TBD"
+)]
 #![allow(clippy::too_many_lines, clippy::cognitive_complexity, reason = "TBD")]
 
 mod module;
@@ -125,7 +131,9 @@ fn main() -> Result<()> {
 
             main_pb.set_message("Initializing remote connection...");
             let url = payload_path_str.clone();
-            let is_zip = Path::new(&url).extension().is_some_and(|ext| ext.eq_ignore_ascii_case("zip"));
+            let is_zip = Path::new(&url)
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("zip"));
 
             let content_type = if is_zip {
                 None
@@ -209,7 +217,7 @@ fn main() -> Result<()> {
         {
             if !args.diff {
                 bail!(
-                    "This appears to be a differential OTA package. Use --diff argument and provide the original images directory with --old <path>"
+                    "This appears to be a differential OTA package. Use --diff argument and provide the original partitions directory with --old <path>"
                 );
             }
         }
@@ -282,14 +290,14 @@ fn main() -> Result<()> {
     }
 
     let block_size = manifest.block_size.unwrap_or(4096);
-    let partitions_to_extract: Vec<_> = if args.images.is_empty() {
+    let partitions_to_extract: Vec<_> = if args.partitions.is_empty() {
         manifest.partitions.iter().collect()
     } else {
-        let images = args.images.split(',').collect::<HashSet<_>>();
+        let partitions: HashSet<_> = args.partitions.iter().collect();
         manifest
             .partitions
             .iter()
-            .filter(|p| images.contains(p.partition_name.as_str()))
+            .filter(|p| partitions.contains(&p.partition_name))
             .collect()
     };
     if partitions_to_extract.is_empty() {
@@ -302,7 +310,10 @@ fn main() -> Result<()> {
         partitions_to_extract.len()
     ));
 
-    let use_parallel = (args.payload_path.extension().and_then(|e| e.to_str()) == Some("bin") || is_local_zip || is_url) && !args.no_parallel;
+    let use_parallel = (args.payload_path.extension().and_then(|e| e.to_str()) == Some("bin")
+        || is_local_zip
+        || is_url)
+        && !args.no_parallel;
     main_pb.set_message(if use_parallel {
         "Extracting Partitions..."
     } else {
@@ -337,8 +348,6 @@ fn main() -> Result<()> {
                     let active_readers = Arc::clone(&active_readers);
                     let partition_name = partition.partition_name.clone();
 
-
-
                     (0..max_retries)
                         .find_map(|attempt| {
                             if attempt > 0 {
@@ -366,8 +375,11 @@ fn main() -> Result<()> {
                                 if is_url {
                                     #[cfg(feature = "remote_ota")]
                                     {
-                                        RemoteZipReader::new_for_parallel((*payload_url).clone(), &args.user_agent)
-                                            .map(|reader| Box::new(reader) as Box<dyn ReadSeek>)
+                                        RemoteZipReader::new_for_parallel(
+                                            (*payload_url).clone(),
+                                            &args.user_agent,
+                                        )
+                                        .map(|reader| Box::new(reader) as Box<dyn ReadSeek>)
                                     }
                                     #[cfg(not(feature = "remote_ota"))]
                                     {
@@ -448,8 +460,10 @@ fn main() -> Result<()> {
             let mut reader: Box<dyn ReadSeek> = if is_url {
                 #[cfg(feature = "remote_ota")]
                 {
-                    Box::new(RemoteZipReader::new_for_parallel(payload_url.to_string(), &args.user_agent)?)
-                        as Box<dyn ReadSeek>
+                    Box::new(RemoteZipReader::new_for_parallel(
+                        payload_url.to_string(),
+                        &args.user_agent,
+                    )?) as Box<dyn ReadSeek>
                 }
                 #[cfg(not(feature = "remote_ota"))]
                 {
@@ -511,7 +525,8 @@ fn main() -> Result<()> {
             .copied()
             .collect();
 
-        let failed_verifications = verify_partitions_hash(&partitions_to_verify, &args, &multi_progress);
+        let failed_verifications =
+            verify_partitions_hash(&partitions_to_verify, &args, &multi_progress);
         if !failed_verifications.is_empty() {
             eprintln!(
                 "Hash verification failed for {} partitions.",
@@ -528,7 +543,8 @@ fn main() -> Result<()> {
         ));
         println!(
             "\nExtraction completed successfully in {}. Output directory: {}",
-            elapsed_time, args.out.display()
+            elapsed_time,
+            args.out.display()
         );
     } else {
         main_pb.finish_with_message(format!(

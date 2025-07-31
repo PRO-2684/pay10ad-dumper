@@ -37,9 +37,7 @@ pub fn process_operation(
 
     if let Some(expected_hash) = op.data_sha256_hash.as_deref() {
         if !verify_hash(&data, expected_hash) {
-            println!(
-                "  Warning: Operation {operation_index} data hash mismatch."
-            );
+            println!("  Warning: Operation {operation_index} data hash mismatch.");
             return Ok(());
         }
     }
@@ -322,26 +320,27 @@ pub fn dump_partition(
         }
     }
     if let Some(pb) = progress_bar {
-        pb.finish_with_message(format!(
-            "✓ Completed {partition_name} ({total_ops} ops)"
-        ));
+        pb.finish_with_message(format!("✓ Completed {partition_name} ({total_ops} ops)"));
     }
     drop(out_file);
     let mut out_file = File::open(&out_path)
         .with_context(|| format!("Failed to reopen {partition_name} for hash verification"))?;
     if let Some(info) = &partition.new_partition_info {
         if info.hash.as_ref().is_none_or(std::vec::Vec::is_empty) {
-            let hash_pb = multi_progress.map_or_else(|| None, |mp| {
-                let pb = mp.add(ProgressBar::new_spinner());
-                pb.set_style(
-                    ProgressStyle::default_spinner()
-                        .template("{spinner:.green} {msg}")
-                        .unwrap(),
-                );
-                pb.enable_steady_tick(Duration::from_millis(100));
-                pb.set_message(format!("Verifying hash for {partition_name}"));
-                Some(pb)
-            });
+            let hash_pb = multi_progress.map_or_else(
+                || None,
+                |mp| {
+                    let pb = mp.add(ProgressBar::new_spinner());
+                    pb.set_style(
+                        ProgressStyle::default_spinner()
+                            .template("{spinner:.green} {msg}")
+                            .unwrap(),
+                    );
+                    pb.enable_steady_tick(Duration::from_millis(100));
+                    pb.set_message(format!("Verifying hash for {partition_name}"));
+                    Some(pb)
+                },
+            );
             out_file.seek(SeekFrom::Start(0))?;
             let mut hasher = Sha256::new();
             io::copy(&mut out_file, &mut hasher)?;
@@ -364,11 +363,10 @@ pub fn create_payload_reader(path: &PathBuf) -> Result<Box<dyn ReadSeek>> {
     let file_size = file.metadata()?.len();
 
     if file_size > 10 * 1024 * 1024 {
-        unsafe { memmap2::Mmap::map(&file) }
-            .map_or_else(
-                |_| Ok(Box::new(file) as Box<dyn ReadSeek>),
-                |mmap| Ok(Box::new(MmapReader { mmap, position: 0 }) as Box<dyn ReadSeek>)
-            )
+        unsafe { memmap2::Mmap::map(&file) }.map_or_else(
+            |_| Ok(Box::new(file) as Box<dyn ReadSeek>),
+            |mmap| Ok(Box::new(MmapReader { mmap, position: 0 }) as Box<dyn ReadSeek>),
+        )
     } else {
         Ok(Box::new(file) as Box<dyn ReadSeek>)
     }

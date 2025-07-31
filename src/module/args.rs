@@ -23,9 +23,9 @@ pub struct Args {
     #[arg(long, default_value = "old")]
     pub old: PathBuf,
 
-    /// Comma-separated list of partition names to extract
+    /// List of partition names to extract
     #[arg(long, short, default_value = "", hide_default_value = true)]
-    pub images: String,
+    pub partitions: Vec<String>,
 
     /// Number of threads to use for parallel processing
     #[arg(long)]
@@ -33,22 +33,22 @@ pub struct Args {
 
     #[cfg(feature = "differential_ota")]
     /// List available partitions in the payload
-    #[arg(long, conflicts_with_all = &["diff", "old", "images", "threads"])]
+    #[arg(long, conflicts_with_all = &["diff", "old", "partitions", "threads"])]
     pub list: bool,
 
     #[cfg(not(feature = "differential_ota"))]
     /// List available partitions in the payload
-    #[arg(long, short, conflicts_with_all = &["images", "threads"])]
+    #[arg(long, short, conflicts_with_all = &["partitions", "threads"])]
     pub list: bool,
 
     #[cfg(feature = "differential_ota")]
     /// Save complete metadata as JSON (use --out - to write to stdout)
-    #[arg(long, conflicts_with_all = &["diff", "old", "images"], hide = cfg!(not(feature = "metadata")))]
+    #[arg(long, conflicts_with_all = &["diff", "old", "partitions"], hide = cfg!(not(feature = "metadata")))]
     pub metadata: bool,
 
     #[cfg(not(feature = "differential_ota"))]
     /// Save complete metadata as JSON (use --out - to write to stdout)
-    #[arg(long, conflicts_with_all = &["images"], hide = cfg!(not(feature = "metadata")))]
+    #[arg(long, conflicts_with_all = &["partitions"], hide = cfg!(not(feature = "metadata")))]
     pub metadata: bool,
 
     /// Disable parallel extraction
@@ -60,6 +60,10 @@ pub struct Args {
     pub no_verify: bool,
 
     /// User-Agent to use (Only takes effect when providing URL)
-    #[arg(long, short, default_value = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")]
+    #[arg(
+        long,
+        short,
+        default_value = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    )]
     pub user_agent: String,
 }

@@ -324,7 +324,8 @@ impl ZipParser {
             return Err(anyhow!("payload.bin is compressed, expected uncompressed"));
         }
 
-        let local_filename_len = u64::from(u16::from_le_bytes([local_header[26], local_header[27]]));
+        let local_filename_len =
+            u64::from(u16::from_le_bytes([local_header[26], local_header[27]]));
         let local_extra_len = u64::from(u16::from_le_bytes([local_header[28], local_header[29]]));
 
         let data_offset = entry.offset + 30 + local_filename_len + local_extra_len;

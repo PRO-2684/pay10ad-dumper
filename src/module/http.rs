@@ -1,5 +1,5 @@
 use crate::module::utils::format_size;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use reqwest::{
     blocking::{Client, Response},
     header,
@@ -49,7 +49,10 @@ impl HttpReader {
             header::HeaderValue::from_static("gzip, deflate, br"),
         );
         headers.insert(header::ACCEPT, header::HeaderValue::from_static("*/*"));
-        headers.insert(header::USER_AGENT, header::HeaderValue::from_str(user_agent)?);
+        headers.insert(
+            header::USER_AGENT,
+            header::HeaderValue::from_str(user_agent)?,
+        );
         headers.insert(
             header::ACCEPT_RANGES,
             header::HeaderValue::from_static("bytes"),
@@ -84,13 +87,13 @@ impl HttpReader {
         let _host = parsed_url
             .host_str()
             .ok_or_else(|| anyhow!("No host in URL"))?;
-        let _port = parsed_url
-            .port()
-            .unwrap_or_else(|| if parsed_url.scheme() == "https" {
+        let _port = parsed_url.port().unwrap_or_else(|| {
+            if parsed_url.scheme() == "https" {
                 443
             } else {
                 80
-            });
+            }
+        });
 
         let mut retry_count: u64 = 0;
         let max_retries = 3;
@@ -119,12 +122,12 @@ impl HttpReader {
                         .and_then(|v| v.to_str().ok())
                         .is_some_and(|v| v == "bytes");
 
-                    if !supports_ranges
-                        && !ACCEPT_RANGES_WARNING_SHOWN.swap(true, Ordering::SeqCst) {
-                            eprintln!(
-                                "- Warning: Server doesn't advertise Accept-Ranges. The process may fail."
-                            );
-                        }
+                    if !supports_ranges && !ACCEPT_RANGES_WARNING_SHOWN.swap(true, Ordering::SeqCst)
+                    {
+                        eprintln!(
+                            "- Warning: Server doesn't advertise Accept-Ranges. The process may fail."
+                        );
+                    }
 
                     // Print file size info if requested
                     if print_size && !FILE_SIZE_INFO_SHOWN.swap(true, Ordering::SeqCst) {
@@ -182,9 +185,11 @@ impl HttpReader {
             {
                 Ok(mut response) => {
                     if !response.status().is_success() && response.status().as_u16() != 206 {
-                        return Err(io::Error::other(
-                            format!("HTTP error: {} for range {}", response.status(), range),
-                        ));
+                        return Err(io::Error::other(format!(
+                            "HTTP error: {} for range {}",
+                            response.status(),
+                            range
+                        )));
                     }
 
                     return copy_from_response(&mut response, &mut buf[..to_read]);
@@ -192,11 +197,9 @@ impl HttpReader {
                 Err(e) => {
                     retry_count += 1;
                     if retry_count == max_retries {
-                        return Err(io::Error::other(
-                            format!(
-                                "Failed to read range {range} after {max_retries} retries: {e}"
-                            ),
-                        ));
+                        return Err(io::Error::other(format!(
+                            "Failed to read range {range} after {max_retries} retries: {e}"
+                        )));
                     }
                     std::thread::sleep(Duration::from_secs(2 * retry_count as u64));
                 }

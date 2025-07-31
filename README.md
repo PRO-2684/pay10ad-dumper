@@ -8,7 +8,7 @@ Android payload is a file that contains ROM partitions like boot, system, vendor
 
 ## Features
 
-- Extracts all or individual images directly from payload.bin or ROM ZIP file.
+- Extracts all or individual partitions directly from payload.bin or ROM ZIP file.
 - Supports extracting individual partitions from URLs without downloading the full ROM ZIP.
 - All decompression processes run in parallel for improved performance. (Can be customised by the arguments `--no-parallel` or `--threads <n>`)
 - Output partitions verification
@@ -93,10 +93,10 @@ It can also handle payloads/zips directly using url. Simply provide the URL as p
 
 #### Individual Partitions Extraction
 
-- To extract individual partitions from payloads/URL/zips , use `--images` and enter the names of partitions you want to extract separated by comma. e.g. To extract `boot` and `vendor_boot` from `url/zip/payload` , simply run:
+- To extract individual partitions from payloads/URL/zips , use `-p`/`--partitions` and specify the names of partitions you want to extract one by one. e.g. To extract `boot` and `init_boot` from `url/zip/payload` , simply run:
 
   ```bash
-  payload_dumper --images boot,vendor_boot <https://example.com/zip>
+  payload_dumper --p boot --p init_boot <https://example.com/zip>
   ```
 
 #### CLI Reference
@@ -113,8 +113,8 @@ Arguments:
       Enable differential OTA mode (requires --old).
   --old <OLD>
       Path to the directory containing old partition images (required for --diff). [default: old]
-  --images, -i <IMAGES>
-      Comma-separated list of partition names to extract (default: all partitions)
+  --partitions, -i <PARTITIONS>
+      List of partition names to extract (default: all partitions)
   --threads <THREADS>
       Number of threads to use for parallel processing.
   --list, -l
