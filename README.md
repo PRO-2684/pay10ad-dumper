@@ -12,6 +12,7 @@ Feature-rich Android OTA payload dumper written in Rust.
 - Extract from **HTTP(S) URL** (`payload.bin` or zip) without downloading the whole file (Need server support)
 - Verify output partitions
 - Parallelism to maximize speed (Customizable via `--no-parallel`/`--threads`)
+- Tiny: < 1M compressed on all supported platforms (Windows, MacOS, Linux)
 
 ## 📥 Installation
 
@@ -38,6 +39,26 @@ cargo install pay10ad-dumper
 - Extract all partitions from `payload.bin`: `pay10ad-dumper payload.bin`
 - List partitions from `ota.zip`: `pay10ad-dumper -l ota.zip`
 - Extract `boot` & `init_boot` from `<URL>`: `pay10ad-dumper -p boot -p init_boot <URL>`
+
+<details><summary>
+
+📸 Screenshot of `pay10ad-dumper` extracting `init_boot.img` from an online OTA zip file with specified UA
+
+</summary>
+
+![sample-online-zip.png](images/sample-online-zip.png)
+
+</details>
+
+<details><summary>
+
+📸 Screenshot of `pay10ad-dumper` listing partitions from local `payload.bin`
+
+</summary>
+
+![sample-local-list](images/sample-local-list.png)
+
+</details>
 
 ### CLI Reference
 
