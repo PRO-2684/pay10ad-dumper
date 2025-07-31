@@ -33,15 +33,15 @@ message PartitionInfo {
 }
 message InstallOperation {
   enum Type {
-    REPLACE = 0;     
-    REPLACE_BZ = 1;  
-    MOVE = 2 [deprecated = true];    
-    BSDIFF = 3 [deprecated = true]; 
-    SOURCE_COPY = 4;  
-    SOURCE_BSDIFF = 5; 
-    REPLACE_XZ = 8; 
-    ZERO = 6; 
-    DISCARD = 7; 
+    REPLACE = 0;
+    REPLACE_BZ = 1;
+    MOVE = 2 [deprecated = true];
+    BSDIFF = 3 [deprecated = true];
+    SOURCE_COPY = 4;
+    SOURCE_BSDIFF = 5;
+    REPLACE_XZ = 8;
+    ZERO = 6;
+    DISCARD = 7;
     BROTLI_BSDIFF = 10;
     PUFFDIFF = 9;
     ZUCCHINI = 11;
@@ -61,8 +61,8 @@ message InstallOperation {
 }
 message CowMergeOperation {
   enum Type {
-    COW_COPY = 0;    
-    COW_XOR = 1;      
+    COW_COPY = 0;
+    COW_XOR = 1;
     COW_REPLACE = 2;
   }
   optional Type type = 1;

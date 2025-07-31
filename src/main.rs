@@ -12,7 +12,7 @@ use crate::module::verify::verify_partitions_hash;
 use crate::module::zip::local_zip::ZipPayloadReader;
 #[cfg(feature = "remote_ota")]
 use crate::module::zip::remote_zip::RemoteZipReader;
-use anyhow::{Result, anyhow};
+use anyhow::{Result, anyhow, bail};
 use byteorder::{BigEndian, ReadBytesExt};
 use clap::Parser;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
@@ -37,7 +37,6 @@ lazy_static! {
 
 include!("proto/update_metadata.rs");
 
-
 trait ReadSeek: Read + Seek {}
 impl<T: Read + Seek> ReadSeek for T {}
 
@@ -47,9 +46,9 @@ fn main() -> Result<()> {
     // Validate metadata feature usage
     #[cfg(not(feature = "metadata"))]
     if args.metadata {
-        return Err(anyhow!(
+        bail!(
             "Metadata functionality requires the 'metadata' feature to be enabled. Please recompile with --features metadata"
-        ));
+        );
     }
 
     let thread_count = if args.no_parallel {
@@ -86,9 +85,9 @@ fn main() -> Result<()> {
     // Validate URL usage when feature is disabled
     #[cfg(not(feature = "remote_ota"))]
     if payload_path_str.starts_with("http://") || payload_path_str.starts_with("https://") {
-        return Err(anyhow!(
+        bail!(
             "Network-based payload dumping requires the 'remote_ota' feature to be enabled. Please recompile with --features remote_ota"
-        ));
+        );
     }
 
     // Check if it's a local ZIP file
@@ -98,9 +97,9 @@ fn main() -> Result<()> {
     // Validate local ZIP usage when feature is disabled
     #[cfg(not(feature = "local_zip"))]
     if is_local_zip {
-        return Err(anyhow!(
+        bail!(
             "Local ZIP file support requires the 'local_zip' feature to be enabled. Please recompile with --features local_zip"
-        ));
+        );
     }
 
     main_pb.set_message("Opening file...");
@@ -162,9 +161,7 @@ fn main() -> Result<()> {
         #[cfg(not(feature = "remote_ota"))]
         {
             // This branch should never be reached due to earlier validation
-            return Err(anyhow!(
-                "Internal error: URL processing attempted without remote_ota feature"
-            ));
+            bail!("Internal error: URL processing attempted without remote_ota feature");
         }
     } else if is_local_zip {
         #[cfg(feature = "local_zip")]
@@ -176,9 +173,7 @@ fn main() -> Result<()> {
         #[cfg(not(feature = "local_zip"))]
         {
             // This branch should never be reached due to earlier validation
-            return Err(anyhow!(
-                "Internal error: Local ZIP processing attempted without local_zip feature"
-            ));
+            bail!("Internal error: Local ZIP processing attempted without local_zip feature");
         }
     } else {
         Box::new(File::open(&args.payload_path)?) as Box<dyn ReadSeek>
@@ -191,14 +186,11 @@ fn main() -> Result<()> {
     let mut magic = [0u8; 4];
     payload_reader.read_exact(&mut magic)?;
     if magic != *b"CrAU" {
-        return Err(anyhow!("Invalid payload file: magic 'CrAU' not found"));
+        bail!("Invalid payload file: magic 'CrAU' not found");
     }
     let file_format_version = payload_reader.read_u64::<BigEndian>()?;
     if file_format_version != 2 {
-        return Err(anyhow!(
-            "Unsupported payload version: {}",
-            file_format_version
-        ));
+        bail!("Unsupported payload version: {file_format_version}");
     }
     let manifest_size = payload_reader.read_u64::<BigEndian>()?;
     let metadata_signature_size = payload_reader.read_u32::<BigEndian>()?;
@@ -214,17 +206,17 @@ fn main() -> Result<()> {
         #[cfg(feature = "differential_ota")]
         {
             if !args.diff {
-                return Err(anyhow!(
+                bail!(
                     "This appears to be a differential OTA package. Use --diff argument and provide the original images directory with --old <path>"
-                ));
+                );
             }
         }
 
         #[cfg(not(feature = "differential_ota"))]
         {
-            return Err(anyhow!(
+            bail!(
                 "Differential OTA is not supported in this build. Recompile with --features differential_ota"
-            ));
+            );
         }
     }
 
