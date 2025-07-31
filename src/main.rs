@@ -346,7 +346,6 @@ fn main() -> Result<()> {
             .flat_map(|chunk| {
                 chunk.par_iter().map(|partition| {
                     let active_readers = Arc::clone(&active_readers);
-                    let partition_name = partition.partition_name.clone();
 
                     (0..max_retries)
                         .find_map(|attempt| {
@@ -414,7 +413,7 @@ fn main() -> Result<()> {
                                 Ok(reader) => reader,
                                 Err(e) => {
                                     return if attempt == max_retries - 1 {
-                                        Some(Err((partition_name.clone(), e)))
+                                        Some(Err((partition.partition_name.clone(), e)))
                                     } else {
                                         None // Try again
                                     };
@@ -432,7 +431,7 @@ fn main() -> Result<()> {
                                 Ok(()) => Some(Ok(())),
                                 Err(e) => {
                                     if attempt == max_retries - 1 {
-                                        Some(Err((partition_name.clone(), e)))
+                                        Some(Err((partition.partition_name.clone(), e)))
                                     } else {
                                         None // Try again
                                     }
@@ -440,7 +439,10 @@ fn main() -> Result<()> {
                             }
                         })
                         .unwrap_or_else(|| {
-                            Err((partition_name, anyhow!("All retry attempts failed")))
+                            Err((
+                                partition.partition_name.clone(),
+                                anyhow!("All retry attempts failed"),
+                            ))
                         })
                 })
             })
