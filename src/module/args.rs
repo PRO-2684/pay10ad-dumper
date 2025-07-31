@@ -5,6 +5,7 @@ use std::path::PathBuf;
 #[command(version, about, long_about = None)]
 #[command(next_line_help = true)]
 pub struct Args {
+    /// Path or URL to your payload
     pub payload_path: PathBuf,
 
     /// Output directory for extracted partitions
@@ -56,4 +57,8 @@ pub struct Args {
     /// Skip hash verification
     #[arg(long)]
     pub no_verify: bool,
+
+    /// User-Agent to use (Only takes effect when providing URL)
+    #[arg(long, short, default_value = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")]
+    pub user_agent: String,
 }

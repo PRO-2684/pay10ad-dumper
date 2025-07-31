@@ -1,5 +1,5 @@
 use crate::module::utils::format_size;
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use lazy_static::lazy_static;
 use reqwest::{
     blocking::{Client, Response},
@@ -23,16 +23,37 @@ static GLOBAL_RESOLVER: Lazy<Arc<HickoryResolver>> =
     Lazy::new(|| Arc::new(HickoryResolver::default()));
 
 lazy_static! {
-    static ref HTTP_CLIENT: Client = {
+    static ref ACCEPT_RANGES_WARNING_SHOWN: AtomicBool = AtomicBool::new(false);
+    static ref FILE_SIZE_INFO_SHOWN: AtomicBool = AtomicBool::new(false);
+}
+
+#[derive(Clone)]
+pub struct HttpReader {
+    url: String,
+    position: u64,
+    pub content_length: u64,
+    client: Client,
+    pub content_type: Option<String>,
+    supports_ranges: bool,
+}
+
+impl HttpReader {
+    pub fn new(url: String, user_agent: &str) -> Result<Self> {
+        Self::new_internal(url, true, user_agent)
+    }
+
+    pub fn new_silent(url: String, user_agent: &str) -> Result<Self> {
+        Self::new_internal(url, false, user_agent)
+    }
+
+    fn create_client(user_agent: &str) -> Result<Client> {
         let mut headers = header::HeaderMap::new();
         headers.insert(
             header::ACCEPT_ENCODING,
             header::HeaderValue::from_static("gzip, deflate, br"),
         );
         headers.insert(header::ACCEPT, header::HeaderValue::from_static("*/*"));
-        headers.insert(header::USER_AGENT, header::HeaderValue::from_static(
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-        ));
+        headers.insert(header::USER_AGENT, header::HeaderValue::from_str(user_agent)?);
         headers.insert(
             header::ACCEPT_RANGES,
             header::HeaderValue::from_static("bytes"),
@@ -56,46 +77,12 @@ lazy_static! {
         #[cfg(feature = "hickory-dns")]
         let client_builder = client_builder.dns_resolver(GLOBAL_RESOLVER.clone());
 
-        client_builder.build().unwrap_or_else(|_| Client::new())
-    };
-    static ref ACCEPT_RANGES_WARNING_SHOWN: AtomicBool = AtomicBool::new(false);
-    static ref FILE_SIZE_INFO_SHOWN: AtomicBool = AtomicBool::new(false);
-}
-
-pub struct HttpReader {
-    url: String,
-    position: u64,
-    pub content_length: u64,
-    client: Client,
-    pub content_type: Option<String>,
-    supports_ranges: bool,
-}
-
-impl Clone for HttpReader {
-    fn clone(&self) -> Self {
-        Self {
-            url: self.url.clone(),
-            position: self.position,
-            content_length: self.content_length,
-            client: HTTP_CLIENT.clone(),
-            content_type: self.content_type.clone(),
-            supports_ranges: self.supports_ranges,
-        }
-    }
-}
-
-impl HttpReader {
-    pub fn new(url: String) -> Result<Self> {
-        Self::new_internal(url, true)
+        let client = client_builder.build()?;
+        Ok(client)
     }
 
-    pub fn new_silent(url: String) -> Result<Self> {
-        Self::new_internal(url, false)
-    }
-
-    fn new_internal(url: String, print_size: bool) -> Result<Self> {
-        let client = HTTP_CLIENT.clone();
-
+    fn new_internal(url: String, print_size: bool, user_agent: &str) -> Result<Self> {
+        let client = Self::create_client(user_agent).with_context(|| "Failed to build client")?;
         let parsed_url = url::Url::parse(&url).map_err(|e| anyhow!("Invalid URL: {}", e))?;
 
         let _host = parsed_url
@@ -170,83 +157,10 @@ impl HttpReader {
         }
 
         Err(anyhow!(
-            "Failed to connect after {} retries. Last error: {}",
-            max_retries,
+            "Failed to connect after {max_retries} retries. Last error: {}",
             last_error.unwrap()
         ))
     }
-
-    /*
-
-    pub fn supports_ranges(&self) -> bool {
-        self.supports_ranges
-    }
-
-
-
-    fn read_range(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        if self.position >= self.content_length {
-            return Ok(0);
-        }
-
-        let start = self.position;
-        let remaining = self.content_length - start;
-        let to_read = std::cmp::min(buf.len() as u64, remaining) as usize;
-
-        if to_read == 0 {
-            return Ok(0);
-        }
-
-        // Use a reasonable chunk size, but don't exceed buffer size
-        let chunk_size = std::cmp::min(to_read, 4 * 1024 * 1024);
-        let end = start + chunk_size as u64 - 1;
-        let range = format!("bytes={}-{}", start, end);
-
-        let mut retry_count = 0;
-        let max_retries = 3;
-
-        while retry_count < max_retries {
-            let request = self
-                .client
-                .get(&self.url)
-                .header(header::RANGE, range.clone())
-                .header(header::CONNECTION, "keep-alive");
-
-            match request.send() {
-                Ok(mut response) => {
-                    // Check for success or partial content (206)
-                    if !response.status().is_success() && response.status().as_u16() != 206 {
-                        return Err(io::Error::new(
-                            io::ErrorKind::Other,
-                            format!("HTTP error: {} for range {}", response.status(), range),
-                        ));
-                    }
-
-                    // Read the actual response data
-                    let bytes_read = copy_from_response(&mut response, &mut buf[..chunk_size])?;
-                    self.position += bytes_read as u64;
-                    return Ok(bytes_read);
-                }
-                Err(e) => {
-                    retry_count += 1;
-                    if retry_count == max_retries {
-                        return Err(io::Error::new(
-                            io::ErrorKind::Other,
-                            format!("Failed to read range {} after {} retries: {}", range, max_retries, e)
-                        ));
-                    }
-                    std::thread::sleep(Duration::from_secs(2 * retry_count as u64));
-                }
-            }
-        }
-
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Failed to read range after maximum retries",
-        ))
-    }
-
-    */
 
     pub fn read_at(&self, offset: u64, buf: &mut [u8]) -> io::Result<usize> {
         if offset >= self.content_length {

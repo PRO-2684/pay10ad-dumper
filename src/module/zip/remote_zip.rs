@@ -73,8 +73,8 @@ impl RemoteZipReader {
         })
     }
 
-    pub fn new_for_parallel(url: String) -> Result<Self> {
-        let http_reader = HttpReader::new_silent(url.clone())?;
+    pub fn new_for_parallel(url: String, user_agent: &str) -> Result<Self> {
+        let http_reader = HttpReader::new_silent(url, user_agent)?;
         if let Ok(payload_info) = Self::find_payload_via_metadata(&mut http_reader.clone()) {
             return Ok(Self {
                 http_reader,

@@ -124,7 +124,7 @@ fn main() -> Result<()> {
             let is_zip = url.ends_with(".zip");
 
             let content_type = if !is_zip {
-                let http_reader = HttpReader::new_silent(url.clone());
+                let http_reader = HttpReader::new_silent(url.clone(), &args.user_agent);
                 if let Ok(reader) = &http_reader {
                     let file_size = reader.content_length;
                     main_pb.set_message("Connection established");
@@ -141,7 +141,7 @@ fn main() -> Result<()> {
             };
 
             if is_zip || content_type.as_deref() == Some("application/zip") {
-                let reader = RemoteZipReader::new_for_parallel(url)?;
+                let reader = RemoteZipReader::new_for_parallel(url, &args.user_agent)?;
                 let file_size = reader.http_reader.content_length;
                 main_pb.set_message("Connection established");
                 if file_size > 1024 * 1024 && !FILE_SIZE_INFO_SHOWN.swap(true, Ordering::SeqCst) {
@@ -149,7 +149,7 @@ fn main() -> Result<()> {
                 }
                 Box::new(reader) as Box<dyn ReadSeek>
             } else {
-                let reader = HttpReader::new(url)?;
+                let reader = HttpReader::new(url, &args.user_agent)?;
                 let file_size = reader.content_length;
                 main_pb.set_message("Connection established");
                 if file_size > 1024 * 1024 && !FILE_SIZE_INFO_SHOWN.swap(true, Ordering::SeqCst) {
@@ -367,7 +367,7 @@ fn main() -> Result<()> {
                                 if is_url {
                                     #[cfg(feature = "remote_ota")]
                                     {
-                                        RemoteZipReader::new_for_parallel((*payload_url).clone())
+                                        RemoteZipReader::new_for_parallel((*payload_url).clone(), &args.user_agent)
                                             .map(|reader| Box::new(reader) as Box<dyn ReadSeek>)
                                     }
                                     #[cfg(not(feature = "remote_ota"))]
@@ -451,7 +451,7 @@ fn main() -> Result<()> {
             let mut reader: Box<dyn ReadSeek> = if is_url {
                 #[cfg(feature = "remote_ota")]
                 {
-                    Box::new(RemoteZipReader::new_for_parallel(payload_url.to_string())?)
+                    Box::new(RemoteZipReader::new_for_parallel(payload_url.to_string(), &args.user_agent)?)
                         as Box<dyn ReadSeek>
                 }
                 #[cfg(not(feature = "remote_ota"))]
