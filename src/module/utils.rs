@@ -1,70 +1,11 @@
 use crate::DeltaArchiveManifest;
 use crate::ReadSeek;
 use crate::install_operation;
-use anyhow::{Result, anyhow};
+use anyhow::{Result, bail};
 use byteorder::{BigEndian, ReadBytesExt};
 use prost::Message;
 use std::io::SeekFrom;
 use std::time::Duration;
-/*
-#[cfg(all(windows, feature = "local_zip"))]
-use std::ffi::OsStr;
-#[cfg(all(windows, feature = "local_zip"))]
-use std::os::windows::ffi::OsStrExt;
-
-
-#[cfg(all(windows, feature = "local_zip"))]
-pub fn handle_path(path: &str) -> Result<String> {
-    let wide: Vec<u16> = OsStr::new(path).encode_wide().chain(Some(0)).collect();
-    let utf8_path = String::from_utf16_lossy(&wide[..wide.len() - 1]);
-    Ok(utf8_path.replace('\\', "/"))
-}
-
-#[cfg(all(not(windows), feature = "local_zip"))]
-pub fn handle_path(path: &str) -> Result<String> {
-    Ok(path.to_string())
-}
-
-#[cfg(feature = "local_zip")]
-pub fn get_zip_error_message(error_code: i32) -> &'static str {
-    match error_code {
-        0 => "No error",
-        1 => "Multi-disk zip archives not supported",
-        2 => "Renaming temporary file failed",
-        3 => "Closing zip archive failed",
-        4 => "Seek error",
-        5 => "Read error",
-        6 => "Write error",
-        7 => "CRC error",
-        8 => "Containing zip archive was closed",
-        9 => "No such file",
-        10 => "File already exists",
-        11 => "Can't open file",
-        12 => "Failure to create temporary file",
-        13 => "Zlib error",
-        14 => "Memory allocation failure",
-        15 => "Entry has been changed",
-        16 => "Compression method not supported",
-        17 => "Premature end of file",
-        18 => "Invalid argument",
-        19 => "Not a zip archive",
-        20 => "Internal error",
-        21 => "Zip archive inconsistent",
-        22 => "Can't remove file",
-        23 => "Entry has been deleted",
-        24 => "Encryption method not supported",
-        25 => "Read-only archive",
-        26 => "No password provided",
-        27 => "Wrong password provided",
-        28 => "Operation not supported",
-        29 => "Resource still in use",
-        30 => "Tell error",
-        31 => "Compressed data invalid",
-        _ => "Unknown error",
-    }
-}
-
-*/
 
 pub fn is_differential_ota(manifest: &DeltaArchiveManifest) -> bool {
     manifest.partitions.iter().any(|partition| {
@@ -135,15 +76,12 @@ pub fn list_partitions(payload_reader: &mut Box<dyn ReadSeek>) -> Result<()> {
             }
             offset += bytes_read as u64;
         }
-        return Err(anyhow!("Invalid payload file: magic 'CrAU' not found"));
+        bail!("Invalid payload file: magic 'CrAU' not found");
     }
 
     let file_format_version = payload_reader.read_u64::<BigEndian>()?;
     if file_format_version != 2 {
-        return Err(anyhow!(
-            "Unsupported payload version: {}",
-            file_format_version
-        ));
+        bail!("Unsupported payload version: {file_format_version}");
     }
     let manifest_size = payload_reader.read_u64::<BigEndian>()?;
     let _metadata_signature_size = payload_reader.read_u32::<BigEndian>()?;

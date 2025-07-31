@@ -64,7 +64,7 @@ pub struct Args {
         long,
         short,
         default_value = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        hide_default_value = true,
+        hide_default_value = true
     )]
     pub user_agent: String,
 }

@@ -4,7 +4,7 @@ use crate::ReadSeek;
 use crate::module::args::Args;
 use crate::module::utils::format_size;
 #[cfg(feature = "differential_ota")]
-use anyhow::anyhow;
+use anyhow::bail;
 use anyhow::{Context, Result};
 use digest::Digest;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
@@ -230,7 +230,7 @@ pub fn verify_old_partition(
 
         let computed_hash = hasher.finalize();
         if computed_hash.as_slice() != expected_hash {
-            return Err(anyhow!("Old partition hash verification failed"));
+            bail!("Old partition hash verification failed");
         }
     }
     Ok(())

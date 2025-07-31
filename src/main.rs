@@ -469,7 +469,7 @@ fn main() -> Result<()> {
                 }
                 #[cfg(not(feature = "remote_ota"))]
                 {
-                    return Err(anyhow!("Remote OTA feature not enabled"));
+                    bail!("Remote OTA feature not enabled");
                 }
             } else {
                 payload_reader

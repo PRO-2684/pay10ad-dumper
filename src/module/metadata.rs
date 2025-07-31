@@ -1,10 +1,9 @@
-use crate::DeltaArchiveManifest;
-use crate::install_operation;
 use crate::module::structs::{
     ApexInfoMetadata, DynamicPartitionGroupInfo, DynamicPartitionInfo, PartitionMetadata,
     PayloadMetadata, VabcFeatureSetInfo,
 };
 use crate::module::utils::format_size;
+use crate::{DeltaArchiveManifest, DynamicPartitionMetadata, install_operation};
 use anyhow::Result;
 use serde_json;
 use std::fs;
@@ -74,33 +73,10 @@ pub fn save_metadata(
         }
     }
 
-    let dynamic_partition_metadata = manifest.dynamic_partition_metadata.as_ref().map(|dpm| {
-        let groups: Vec<DynamicPartitionGroupInfo> = dpm
-            .groups
-            .iter()
-            .map(|group| DynamicPartitionGroupInfo {
-                name: group.name.clone(),
-                size: group.size,
-                partition_names: group.partition_names.clone(),
-            })
-            .collect();
-
-        let vabc_feature_set = dpm.vabc_feature_set.as_ref().map(|fs| VabcFeatureSetInfo {
-            threaded: fs.threaded,
-            batch_writes: fs.batch_writes,
-        });
-
-        DynamicPartitionInfo {
-            groups,
-            snapshot_enabled: dpm.snapshot_enabled,
-            vabc_enabled: dpm.vabc_enabled,
-            vabc_compression_param: dpm.vabc_compression_param.clone(),
-            cow_version: dpm.cow_version,
-            vabc_feature_set,
-            compression_factor: dpm.compression_factor,
-        }
-    });
-
+    let dynamic_partition_metadata = manifest
+        .dynamic_partition_metadata
+        .as_ref()
+        .map(extract_dynamic_partition_info);
     let apex_info: Vec<ApexInfoMetadata> = manifest
         .apex_info
         .iter()
@@ -133,4 +109,32 @@ pub fn save_metadata(
     fs::write(metadata_path, &json)?;
 
     Ok(json)
+}
+
+/// Extracts [`DynamicPartitionInfo`] from [`DynamicPartitionMetadata`].
+fn extract_dynamic_partition_info(dpm: &DynamicPartitionMetadata) -> DynamicPartitionInfo {
+    let groups: Vec<DynamicPartitionGroupInfo> = dpm
+        .groups
+        .iter()
+        .map(|group| DynamicPartitionGroupInfo {
+            name: group.name.clone(),
+            size: group.size,
+            partition_names: group.partition_names.clone(),
+        })
+        .collect();
+
+    let vabc_feature_set = dpm.vabc_feature_set.as_ref().map(|fs| VabcFeatureSetInfo {
+        threaded: fs.threaded,
+        batch_writes: fs.batch_writes,
+    });
+
+    DynamicPartitionInfo {
+        groups,
+        snapshot_enabled: dpm.snapshot_enabled,
+        vabc_enabled: dpm.vabc_enabled,
+        vabc_compression_param: dpm.vabc_compression_param.clone(),
+        cow_version: dpm.cow_version,
+        vabc_feature_set,
+        compression_factor: dpm.compression_factor,
+    }
 }

@@ -49,10 +49,6 @@ hickory-dns = ["remote_ota", "dep:once_cell", "dep:reqwest-hickory-resolver"]
 differential_ota = ["dep:bsdiff"]
 local_zip = []
 metadata = ["dep:serde", "dep:serde_json"]
-# rust-lzma = ["dep:rust-lzma"]
-
-# [build-dependencies]
-# cc = "1.0.83"
 
 [profile.release]
 strip = true

@@ -8,17 +8,14 @@ use crate::module::patch::bspatch;
 use crate::module::verify::verify_hash;
 #[cfg(feature = "differential_ota")]
 use crate::module::verify::verify_old_partition;
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result, anyhow, bail};
 use bzip2::read::BzDecoder;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-// #[cfg(feature = "rust-lzma")]
-// use lzma::LzmaReader;
 use sha2::{Digest, Sha256};
 use std::fs::{self, File};
 use std::io::{self, Cursor, Read, Seek, SeekFrom, Write};
 use std::path::PathBuf;
 use std::time::Duration;
-// #[cfg(not(feature = "rust-lzma"))]
 use xz4rust::{XzDecoder, XzNextBlockResult};
 
 pub fn process_operation(
@@ -42,36 +39,6 @@ pub fn process_operation(
         }
     }
     match op.r#type() {
-        /*
-        #[cfg(feature = "rust-lzma")]
-        install_operation::Type::ReplaceXz => {
-            let mut decompressed = Vec::new();
-            match LzmaReader::new_decompressor(Cursor::new(&data)) {
-                Ok(mut decompressor) => {
-                    if let Err(e) = decompressor.read_to_end(&mut decompressed) {
-                        println!(
-                            "  Warning: Failed to decompress XZ in operation {}.  : {}",
-                            operation_index, e
-                        );
-                        return Ok(());
-                    }
-                    out_file.seek(SeekFrom::Start(
-                        op.dst_extents[0].start_block.unwrap_or(0) * block_size,
-                    ))?;
-                    out_file.write_all(&decompressed)?;
-                }
-                Err(e) => {
-                    println!(
-                        "  Warning: Skipping operation {} due to XZ decompression error.  : {}",
-                        operation_index, e
-                    );
-                    return Ok(());
-                }
-            }
-        }
-
-        #[cfg(not(feature = "rust-lzma"))]
-        */
         install_operation::Type::ReplaceXz => {
             let mut decompressed = Vec::new();
             let mut decoder = XzDecoder::in_heap_with_alloc_dict_size(
@@ -223,10 +190,7 @@ pub fn process_operation(
         install_operation::Type::SourceCopy
         | install_operation::Type::SourceBsdiff
         | install_operation::Type::BrotliBsdiff => {
-            return Err(anyhow!(
-                "Operation {} requires differential_ota feature to be enabled",
-                operation_index
-            ));
+            bail!("Operation {operation_index} requires differential_ota feature to be enabled");
         }
         _ => {
             println!(
@@ -272,7 +236,7 @@ pub fn dump_partition(
                 if let Some(size) = info.size {
                     out_file.set_len(size)?;
                 } else {
-                    return Err(anyhow!("Partition size is missing"));
+                    bail!("Partition size is missing");
                 }
             }
         }
@@ -280,18 +244,14 @@ pub fn dump_partition(
 
     #[cfg(feature = "differential_ota")]
     let mut old_file = if args.diff {
-        let old_path = args.old.join(format!("{}.img", partition_name));
+        let old_path = args.old.join(format!("{partition_name}.img"));
         let mut file = File::open(&old_path)
-            .with_context(|| format!("Failed to open original image: {:?}", old_path))?;
+            .with_context(|| format!("Failed to open original image: {}", old_path.display()))?;
 
         // Verify old partition hash if available
         if let Some(old_partition_info) = &partition.old_partition_info {
             if let Err(e) = verify_old_partition(&mut file, old_partition_info) {
-                return Err(anyhow!(
-                    "Old partition verification failed for {}: {}",
-                    partition_name,
-                    e
-                ));
+                bail!("Old partition verification failed for {partition_name}: {e}");
             }
         }
 

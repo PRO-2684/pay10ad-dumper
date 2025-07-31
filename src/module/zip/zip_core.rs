@@ -1,4 +1,4 @@
-use anyhow::{Result, anyhow};
+use anyhow::{Result, anyhow, bail};
 use std::io::{Read, Seek, SeekFrom};
 
 // ZIP signatures
@@ -79,7 +79,7 @@ impl ZipParser {
     pub fn read_zip64_eocd<R: Read + Seek>(reader: &mut R, eocd_offset: u64) -> Result<(u64, u64)> {
         // Look for ZIP64 EOCD locator
         if eocd_offset < 20 {
-            return Err(anyhow!("Invalid ZIP64 structure"));
+            bail!("Invalid ZIP64 structure");
         }
 
         let search_start = eocd_offset.saturating_sub(20);
@@ -113,9 +113,7 @@ impl ZipParser {
         }
 
         if !found_locator {
-            return Err(anyhow!(
-                "ZIP64 format indicated but ZIP64 EOCD locator not found"
-            ));
+            bail!("ZIP64 format indicated but ZIP64 EOCD locator not found");
         }
 
         // Read ZIP64 EOCD
@@ -124,7 +122,7 @@ impl ZipParser {
         reader.read_exact(&mut zip64_eocd)?;
 
         if zip64_eocd[0..4] != ZIP64_EOCD_SIGNATURE {
-            return Err(anyhow!("Invalid ZIP64 EOCD signature"));
+            bail!("Invalid ZIP64 EOCD signature");
         }
 
         let cd_offset = u64::from_le_bytes([
@@ -175,7 +173,7 @@ impl ZipParser {
         reader.read_exact(&mut entry_header)?;
 
         if entry_header[0..4] != CENTRAL_DIR_HEADER_SIGNATURE {
-            return Err(anyhow!("Invalid central directory header signature"));
+            bail!("Invalid central directory header signature");
         }
 
         let compression_method = u16::from_le_bytes([entry_header[10], entry_header[11]]);
@@ -315,13 +313,13 @@ impl ZipParser {
         reader.read_exact(&mut local_header)?;
 
         if local_header[0..4] != LOCAL_FILE_HEADER_SIGNATURE {
-            return Err(anyhow!("Invalid local file header signature"));
+            bail!("Invalid local file header signature");
         }
 
         // Double-check compression method in local header
         let local_compression = u16::from_le_bytes([local_header[8], local_header[9]]);
         if local_compression != 0 {
-            return Err(anyhow!("payload.bin is compressed, expected uncompressed"));
+            bail!("payload.bin is compressed, expected uncompressed");
         }
 
         let local_filename_len =
@@ -339,9 +337,7 @@ impl ZipParser {
         reader.read_exact(&mut magic)?;
 
         if &magic != b"CrAU" {
-            return Err(anyhow!(
-                "Invalid payload file: magic 'CrAU' not found at calculated offset"
-            ));
+            bail!("Invalid payload file: magic 'CrAU' not found at calculated offset");
         }
 
         Ok(())
