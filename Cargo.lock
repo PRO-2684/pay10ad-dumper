@@ -1170,8 +1170,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "payload_dumper"
-version = "0.6.0"
+name = "pay10ad-dumper"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "brotli",

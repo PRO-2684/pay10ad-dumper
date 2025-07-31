@@ -7,7 +7,7 @@ on:
     - "v*"
 
 env:
-  BIN_NAME: payload-dumper-rust
+  BIN_NAME: pay10ad-dumper
 
 jobs:
   create-release:

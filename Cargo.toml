@@ -1,15 +1,16 @@
 [package]
-name = "payload_dumper"
-version = "0.6.0"
+name = "pay10ad-dumper"
+version = "0.1.0"
 edition = "2024"
-authors = ["rhythmcache"]
-description = "Rust-based CLI utility to extract Android OTA payload.bin"
-repository = "https://github.com/rhythmcache/payload-dumper-rust"
 readme = "README.md"
+description = "Feature-rich Android OTA payload dumper written in Rust"
+keywords = ["android", "ota", "extractor", "payload-dumper", "payload-bin"]
+categories = ["command-line-utilities", "development-tools"]
+include = ["src", "README.md", "LICENSE"]
+repository = "https://github.com/PRO-2684/pay10ad-dumper"
+homepage = "https://github.com/PRO-2684/pay10ad-dumper"
 license = "Apache-2.0"
-homepage = "https://github.com/rhythmcache/payload-dumper-rust"
-keywords = ["dumper", "android", "ota", "extractor", "payload"]
-categories = ["command-line-utilities"]
+authors = ["rhythmcache", "PRO-2684"]
 
 [dependencies]
 anyhow = "1.0.98"
@@ -28,13 +29,9 @@ num_cpus = "1.17.0"
 rand = "0.9.2"
 hex = "0.4.3"
 xz4rust = "0.2.1"
-
 serde = { version = "1.0.219", features = ["derive"], optional = true }
 serde_json = { version = "1.0.141", optional = true }
-
 bsdiff = { version = "0.2.1", optional = true }
-# rust-lzma = { version = "0.6.0", optional = true }
-
 once_cell = { version = "1.21.3", optional = true }
 reqwest = { version = "0.12.22", default-features = false, features = [
     "rustls-tls",
@@ -52,19 +49,9 @@ tokio = { version = "1.46.1", features = [
 reqwest-hickory-resolver = { version = "0.2.0", optional = true }
 url = { version = "2.5.4", optional = true }
 
-
-# [target.'cfg(windows)'.dependencies]
-# winapi = { version = "0.3", optional = true, features = ["winbase", "stringapiset", "winnls"] }
-
-
 [features]
 default = ["local_zip", "remote_ota", "metadata"]
-remote_ota = [
-    "dep:url",
-    "dep:reqwest",
-    "dep:webpki-roots",
-    "dep:tokio",
-]
+remote_ota = ["dep:url", "dep:reqwest", "dep:webpki-roots", "dep:tokio"]
 hickory-dns = ["remote_ota", "dep:once_cell", "dep:reqwest-hickory-resolver"]
 differential_ota = ["dep:bsdiff"]
 local_zip = []

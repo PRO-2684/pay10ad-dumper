@@ -24,7 +24,7 @@ pub struct Args {
     pub old: PathBuf,
 
     /// List of partition names to extract
-    #[arg(long, short, default_value = "", hide_default_value = true)]
+    #[arg(long, short)]
     pub partitions: Vec<String>,
 
     /// Number of threads to use for parallel processing
@@ -59,11 +59,12 @@ pub struct Args {
     #[arg(long)]
     pub no_verify: bool,
 
-    /// User-Agent to use (Only takes effect when providing URL)
+    /// User-Agent to use if extracting from URL (Defaults to a representative browser UA)
     #[arg(
         long,
         short,
-        default_value = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        default_value = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        hide_default_value = true,
     )]
     pub user_agent: String,
 }
