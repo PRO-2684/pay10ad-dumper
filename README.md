@@ -60,6 +60,16 @@ cargo install pay10ad-dumper
 
 </details>
 
+<details><summary>
+
+📸 Screenshot of `pay10ad-dumper` listing partitions from remote `ota.zip`
+
+</summary>
+
+![sample-remote-list](images/sample-remote-list.png)
+
+</details>
+
 ### CLI Reference
 
 ```shell
@@ -95,9 +105,27 @@ Options:
           Print version
 ```
 
-## ⚡ Performance
+## 🤔 Comparison
 
-TODO
+| Project | Lang | Zip | URL | URL + zip | Size |
+| - | - | - | - | - | - |
+| [`vm03/payload_dumper`](https://github.com/vm03/payload_dumper) | 🐍 Python | 🔴 | 🔴 | 🔴 | N/A |
+| [`5ec1cff/payload-dumper`](https://github.com/5ec1cff/payload-dumper) | 🐍 Python | 🟢 | 🟢 | 🟡 | N/A |
+| [`payload-dumper-go`](https://github.com/ssut/payload-dumper-go) | 🐹 Go | 🟢 | 🔴 | 🔴 | ≈5M |
+| [`payload-dumper-rust`](https://github.com/rhythmcache/payload-dumper-rust) | 🦀 Rust | 🟢 | 🟢 | 🟢 | ≈2M |
+| [`pay10ad-dumper`](https://github.com/PRO-2684/pay10ad-dumper) | 🦀 Rust | 🟢 | 🟢 | 🟢 | ≈1.5M |
+
+Additional explanation:
+
+- Heading
+    - `Zip`: Whether it supports extracting partitions from ZIP archives without decompressing it first.
+    - `URL`: Whether it supports extracting partitions from `payload.bin` URLs without downloading the whole file.
+    - `URL + Zip`: Whether it supports extracting partitions from `ota.zip` URLs without downloading the whole file.
+    - `Size`: Compiled executable size (decompressed).
+- Values
+    - `🔴`: No
+    - `🟢`: Yes
+    - `🟡`: Not tested
 
 ## 🎉 Credits
 
