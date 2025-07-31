@@ -20,7 +20,7 @@ pub type FileZipPayloadReader = ZipPayloadReader<std::fs::File>;
 impl<R: Read + Seek> ZipPayloadReader<R> {
     pub fn new(reader: R) -> IoResult<Self> {
         let decoder = ZipDecoder::new(reader)?;
-        Ok(ZipPayloadReader {
+        Ok(Self {
             decoder,
             current_entry: None,
             current_position: 0,
@@ -112,12 +112,9 @@ impl FileZipPayloadReader {
 
 impl<R: Read + Seek> Read for ZipPayloadReader<R> {
     fn read(&mut self, buf: &mut [u8]) -> IoResult<usize> {
-        let entry = match &self.current_entry {
-            Some(entry) => entry,
-            None => {
-                self.load_payload_entry()?;
-                self.current_entry.as_ref().unwrap()
-            }
+        let entry = if let Some(entry) = &self.current_entry { entry } else {
+            self.load_payload_entry()?;
+            self.current_entry.as_ref().unwrap()
         };
 
         if self.current_position >= entry.uncompressed_size {
@@ -139,12 +136,9 @@ impl<R: Read + Seek> Read for ZipPayloadReader<R> {
 
 impl<R: Read + Seek> Seek for ZipPayloadReader<R> {
     fn seek(&mut self, pos: SeekFrom) -> IoResult<u64> {
-        let entry = match &self.current_entry {
-            Some(entry) => entry,
-            None => {
-                self.load_payload_entry()?;
-                self.current_entry.as_ref().unwrap()
-            }
+        let entry = if let Some(entry) = &self.current_entry { entry } else {
+            self.load_payload_entry()?;
+            self.current_entry.as_ref().unwrap()
         };
 
         let new_position = match pos {
@@ -180,7 +174,7 @@ impl<R: Read + Seek> Seek for ZipPayloadReader<R> {
 impl<R: Read + Seek> ZipDecoder<R> {
     pub fn new(mut reader: R) -> IoResult<Self> {
         let entries = Self::read_central_directory(&mut reader)?;
-        Ok(ZipDecoder { reader, entries })
+        Ok(Self { reader, entries })
     }
 
     // pub fn entries(&self) -> impl Iterator<Item = &ZipEntry> {

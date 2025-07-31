@@ -37,7 +37,7 @@ jobs:
               echo "TARGET=aarch64-apple-darwin" >> $GITHUB_ENV
               ;;
           esac
-          
+
       - name: Add Rust target
         run: |
           if [ "${{ matrix.architecture }}" = "x86_64" ]; then
@@ -62,7 +62,7 @@ jobs:
       - name: Build zlib
         run: |
           cd ${{ github.workspace }}/build/zlib
-          
+
           # Configure with the correct architecture
           ARCH="${{ matrix.architecture }}"
           if [ "$ARCH" = "arm64" ]; then
@@ -74,14 +74,14 @@ jobs:
             export LDFLAGS="-arch x86_64"
             export ARCHFLAGS="-arch x86_64"
           fi
-          
+
           # Ensure we're using the right architecture
           echo "Building zlib for architecture: $ARCH with CFLAGS=$CFLAGS"
-          
+
           ./configure --prefix=${{ github.workspace }}/lib/darwin/${{ matrix.architecture }} --static
           make -j$(sysctl -n hw.ncpu)
           make install
-          
+
           # Verify the built library architecture
           file ${{ github.workspace }}/lib/darwin/${{ matrix.architecture }}/lib/libz.a
 
@@ -92,23 +92,23 @@ jobs:
           cd ${{ github.workspace }}/build/liblzma
           curl -L https://github.com/tukaani-project/xz/releases/download/v5.8.1/xz-5.8.1.tar.gz -o liblzma.tar.gz
           tar -xzf liblzma.tar.gz --strip-components=1
-          
+
       - name: Build liblzma
         if: matrix.architecture == 'x86_64'
         run: |
           cd ${{ github.workspace }}/build/liblzma
-          
+
           # Set flags for x86_64 architecture
           export CFLAGS="-arch x86_64"
           export LDFLAGS="-arch x86_64"
           export ARCHFLAGS="-arch x86_64"
-          
+
           echo "Building liblzma for x86_64 with CFLAGS=$CFLAGS"
-          
+
           ./configure --prefix=${{ github.workspace }}/lib/darwin/x86_64 --disable-shared --enable-static
           make -j$(sysctl -n hw.ncpu)
           make install
-          
+
           # Verify the built library architecture
           file ${{ github.workspace }}/lib/darwin/x86_64/lib/liblzma.a
 
@@ -121,7 +121,7 @@ jobs:
       - name: Build libzip
         run: |
           cd ${{ github.workspace }}/build/libzip
-          
+
           # Use the correct architecture
           if [ "${{ matrix.architecture }}" = "arm64" ]; then
             export CFLAGS="-arch arm64"
@@ -134,9 +134,9 @@ jobs:
             export CMAKE_OSX_ARCHITECTURES="x86_64"
             ENABLE_LZMA="ON"
           fi
-          
+
           mkdir -p build && cd build
-          
+
           # Configure libzip with minimal features and link to our custom zlib
           # For x86_64, enable LZMA support since we built liblzma
           cmake .. \
@@ -156,7 +156,7 @@ jobs:
             -DBUILD_TOOLS=OFF \
             -DBUILD_REGRESS=OFF \
             -DBUILD_OSSFUZZ=OFF
-            
+
           make -j$(sysctl -n hw.ncpu)
           make install
 
@@ -184,21 +184,21 @@ jobs:
           if [ "${{ matrix.architecture }}" = "x86_64" ]; then
             file ${{ github.workspace }}/lib/darwin/${{ matrix.architecture }}/lib/liblzma.a
           fi
-          
+
           # Build with appropriate flags
           if [ "${{ matrix.architecture }}" = "arm64" ]; then
             TARGET="aarch64-apple-darwin"
             export RUSTFLAGS="-C target-feature=+crt-static -C link-arg=-arch -C link-arg=arm64"
           else
             TARGET="x86_64-apple-darwin"
-            export RUSTFLAGS="-C target-feature=+crt-static -C link-arg=-arch -C link-arg=x86_64" 
+            export RUSTFLAGS="-C target-feature=+crt-static -C link-arg=-arch -C link-arg=x86_64"
           fi
-          
+
           echo "Building for $TARGET with flags: $RUSTFLAGS"
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
           echo "LIBRARY_PATH=$LIBRARY_PATH"
           echo "PKG_CONFIG_ALLOW_CROSS=$PKG_CONFIG_ALLOW_CROSS"
-          
+
           STATIC_LIBS=1 cargo build --release --target $TARGET --features differential_ota
 
       - name: Create artifacts directory
@@ -212,13 +212,13 @@ jobs:
           else
             TARGET_DIR="x86_64-apple-darwin"
           fi
-          
+
           # Find and copy binary
           echo "Looking for binary in target/$TARGET_DIR/release/"
           ls -la target/$TARGET_DIR/release/ || echo "Release directory not found"
-          
+
           cp target/$TARGET_DIR/release/payload_dumper ./artifacts/payload_dumper-${{ matrix.architecture }} || echo "Binary not found"
-          
+
           # Make it executable and verify architecture
           if [ -f ./artifacts/payload_dumper-${{ matrix.architecture }} ]; then
             chmod +x ./artifacts/payload_dumper-${{ matrix.architecture }}

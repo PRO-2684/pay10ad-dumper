@@ -57,15 +57,15 @@ jobs:
         run: |
           echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
           echo "PKG_CONFIG_ALLOW_CROSS=1" >> $GITHUB_ENV
-        
+
           sudo ln -sf $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/${{ matrix.clang_target }} $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/${{ matrix.arch }}-linux-android-clang
-        
+
           echo "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
 
           # Create library directory structure
           mkdir -p ${{ github.workspace }}/lib/android/${{ matrix.lib_dir }}
           mkdir -p ${{ github.workspace }}/include
-          
+
           echo "PKG_CONFIG_PATH=${{ github.workspace }}/lib/android/${{ matrix.lib_dir }}/pkgconfig" >> $GITHUB_ENV
           echo "LIBRARY_PATH=${{ github.workspace }}/lib/android/${{ matrix.lib_dir }}" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=${{ github.workspace }}/lib/android/${{ matrix.lib_dir }}" >> $GITHUB_ENV
@@ -114,17 +114,17 @@ jobs:
           export CFLAGS="-O3 -fPIC"
           export PREFIX="${{ github.workspace }}"
           export LIBDIR="${{ github.workspace }}/lib/android/${{ matrix.lib_dir }}"
-          
+
           # Download and extract zlib
           wget https://zlib.net/zlib-1.3.1.tar.gz
           tar -xzf zlib-1.3.1.tar.gz
           cd zlib-1.3.1
-          
+
           # Configure and build zlib
           ./configure --prefix=$PREFIX --libdir=$LIBDIR --static
           make -j$(nproc)
           make install
-          
+
           # Create pkg-config file
           mkdir -p $LIBDIR/pkgconfig
           cat > $LIBDIR/pkgconfig/zlib.pc << EOF
@@ -132,16 +132,16 @@ jobs:
           exec_prefix=\${prefix}
           libdir=$LIBDIR
           includedir=\${prefix}/include
-          
+
           Name: zlib
           Description: zlib compression library
           Version: 1.3.1
-          
+
           Requires:
           Libs: -L\${libdir} -lz
           Cflags: -I\${includedir}
           EOF
-          
+
           # Verify the library was built
           ls -la $LIBDIR/libz.a
 
@@ -155,17 +155,17 @@ jobs:
           export CFLAGS="-O3 -fPIC"
           export PREFIX="${{ github.workspace }}"
           export LIBDIR="${{ github.workspace }}/lib/android/${{ matrix.lib_dir }}"
-          
+
           # Download and extract xz
           wget https://github.com/tukaani-project/xz/releases/download/v5.8.1/xz-5.8.1.tar.gz
           tar -xzf xz-5.8.1.tar.gz
           cd xz-5.8.1
-          
+
           # Configure and build xz
           ./configure --host=${{ matrix.target }} --prefix=$PREFIX --libdir=$LIBDIR --disable-shared --enable-static --disable-xz --disable-xzdec --disable-lzmadec --disable-lzmainfo --disable-scripts --disable-doc
           make -j$(nproc)
           make install
-          
+
           # Verify the library was built
           ls -la $LIBDIR/liblzma.a
 
@@ -181,13 +181,13 @@ jobs:
           export PKG_CONFIG_PATH="${{ github.workspace }}/lib/android/${{ matrix.lib_dir }}/pkgconfig"
           export PREFIX="${{ github.workspace }}"
           export LIBDIR="${{ github.workspace }}/lib/android/${{ matrix.lib_dir }}"
-          
+
           # Download and extract libzip
           wget https://libzip.org/download/libzip-1.11.4.tar.xz
           tar -xf libzip-1.11.4.tar.xz
           cd libzip-1.11.4
           mkdir build && cd build
-          
+
           # Configure and build libzip with minimal features
           cmake .. \
             -DCMAKE_SYSTEM_NAME=Android \
@@ -212,10 +212,10 @@ jobs:
             -DBUILD_REGRESS=OFF \
             -DBUILD_EXAMPLES=OFF \
             -DBUILD_DOC=OFF
-          
+
           make -j$(nproc)
           make install
-          
+
           # Verify the library was built
           ls -la $LIBDIR/libzip.a
 
@@ -232,16 +232,16 @@ jobs:
             -L $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/${{ matrix.target }}/21 \
             -L $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/${{ matrix.target }} \
             -L ${{ github.workspace }}/lib/android/${{ matrix.lib_dir }}"
-          
+
           # Make libraries discoverable to pkg-config and the Rust linker
           export PKG_CONFIG_PATH="${{ github.workspace }}/lib/android/${{ matrix.lib_dir }}/pkgconfig"
           export PKG_CONFIG_ALLOW_CROSS=1
           export CFLAGS_${{ matrix.arch }}_linux_android="-O3 -target ${{ matrix.target }}21"
-          
+
           if [ "${{ matrix.arch }}" = "x86" ]; then
             export CFLAGS_i686_linux_android="-O3 -target i686-linux-android21"
           fi
-          
+
           if [ "${{ matrix.arch }}" = "armv7" ]; then
             export CFLAGS_arm_linux_androideabi="-O3 -target armv7a-linux-androideabi21"
           fi
@@ -265,21 +265,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Get commit hash
         id: get_commit
         run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-      
+
       - name: Create module
         run: |
-          
+
           mkdir -p module/uncommon
-      
+
       - name: Download all binaries
         uses: actions/download-artifact@v4
         with:
           path: binaries
-          
+
       - name: Prepare Magisk module
         run: |
           mkdir -p module/uncommon
@@ -287,30 +287,30 @@ jobs:
           cp binaries/payload_dumper-android-armeabi-v7a/payload_dumper module/uncommon/payload_dumper-armeabi-v7a
           cp binaries/payload_dumper-android-x86/payload_dumper module/uncommon/payload_dumper-x86
           cp binaries/payload_dumper-android-x86_64/payload_dumper module/uncommon/payload_dumper-x86_64
-          
+
           # Set executable permissions
           chmod +x module/uncommon/payload_dumper-*
-          
-          
+
+
           if [ -f module/module.prop ]; then
             # Update version with gh-actions-{commit}
             sed -i "s/^version=.*/version=gh-actions-${{ steps.get_commit.outputs.SHORT_SHA }}/" module/module.prop
-            
-            
+
+
             sed -i '/^updateJson=/d' module/module.prop
           else
             echo "Error: module.prop not found in module directory!"
             exit 1
           fi
-          
-          
+
+
           echo "MODULE_VERSION=gh-actions-${{ steps.get_commit.outputs.SHORT_SHA }}" >> $GITHUB_ENV
-          
+
           # List the contents of the module directory for verification
           ls -la module/
           ls -la module/uncommon/
-          
-          
+
+
           echo "Contents of module.prop:"
           cat module/module.prop
 

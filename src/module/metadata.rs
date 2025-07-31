@@ -8,25 +8,25 @@ use crate::module::utils::format_size;
 use anyhow::Result;
 use serde_json;
 use std::fs;
-use std::path::PathBuf;
+use std::path::Path;
 
 pub fn save_metadata(
     manifest: &DeltaArchiveManifest,
-    output_dir: &PathBuf,
+    output_dir: &Path,
     data_offset: u64,
 ) -> Result<String> {
     let mut partitions = Vec::new();
     for partition in &manifest.partitions {
         if let Some(info) = &partition.new_partition_info {
             let size_in_bytes = info.size.unwrap_or(0);
-            let block_size = manifest.block_size.unwrap_or(4096) as u64;
+            let block_size = u64::from(manifest.block_size.unwrap_or(4096));
             let size_in_blocks = size_in_bytes / block_size;
             let total_blocks = size_in_bytes / block_size;
-            let hash = info.hash.as_ref().map(|hash| hex::encode(hash));
+            let hash = info.hash.as_ref().map(hex::encode);
             let mut start_offset = data_offset;
             for op in &partition.operations {
                 if let Some(_first_extent) = op.dst_extents.first() {
-                    //2
+                    // 2
                     start_offset = data_offset + op.data_offset.unwrap_or(0);
                     break;
                 }
@@ -64,17 +64,17 @@ pub fn save_metadata(
                 encryption: encryption.to_string(),
                 block_size,
                 total_blocks,
-                run_postinstall: partition.run_postinstall.clone(),
+                run_postinstall: partition.run_postinstall,
                 postinstall_path: partition.postinstall_path.clone(),
                 filesystem_type: partition.filesystem_type.clone(),
-                postinstall_optional: partition.postinstall_optional.clone(),
+                postinstall_optional: partition.postinstall_optional,
                 hash_tree_algorithm: partition.hash_tree_algorithm.clone(),
                 version: partition.version.clone(),
             });
         }
     }
 
-    let dynamic_partition_metadata = if let Some(dpm) = &manifest.dynamic_partition_metadata {
+    let dynamic_partition_metadata = manifest.dynamic_partition_metadata.as_ref().map(|dpm| {
         let groups: Vec<DynamicPartitionGroupInfo> = dpm
             .groups
             .iter()
@@ -90,7 +90,7 @@ pub fn save_metadata(
             batch_writes: fs.batch_writes,
         });
 
-        Some(DynamicPartitionInfo {
+        DynamicPartitionInfo {
             groups,
             snapshot_enabled: dpm.snapshot_enabled,
             vabc_enabled: dpm.vabc_enabled,
@@ -98,10 +98,8 @@ pub fn save_metadata(
             cow_version: dpm.cow_version,
             vabc_feature_set,
             compression_factor: dpm.compression_factor,
-        })
-    } else {
-        None
-    };
+        }
+    });
 
     let apex_info: Vec<ApexInfoMetadata> = manifest
         .apex_info

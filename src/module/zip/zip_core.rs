@@ -82,11 +82,7 @@ impl ZipParser {
             return Err(anyhow!("Invalid ZIP64 structure"));
         }
 
-        let search_start = if eocd_offset > 20 {
-            eocd_offset - 20
-        } else {
-            0
-        };
+        let search_start = eocd_offset.saturating_sub(20);
 
         reader.seek(SeekFrom::Start(search_start))?;
         let mut buffer = vec![0u8; (eocd_offset - search_start) as usize];
@@ -163,9 +159,9 @@ impl ZipParser {
         reader.seek(SeekFrom::Start(eocd_offset + 16))?;
         let mut cd_offset_buf = [0u8; 4];
         reader.read_exact(&mut cd_offset_buf)?;
-        let cd_offset = u32::from_le_bytes(cd_offset_buf) as u64;
+        let cd_offset = u64::from(u32::from_le_bytes(cd_offset_buf));
 
-        if cd_offset == 0xFFFFFFFF {
+        if cd_offset == 0xFFFF_FFFF {
             let (real_cd_offset, real_num_entries) = Self::read_zip64_eocd(reader, eocd_offset)?;
             Ok((real_cd_offset, real_num_entries as usize))
         } else {
@@ -187,26 +183,26 @@ impl ZipParser {
         let extra_len = u16::from_le_bytes([entry_header[30], entry_header[31]]) as usize;
         let comment_len = u16::from_le_bytes([entry_header[32], entry_header[33]]) as usize;
 
-        let mut local_header_offset = u32::from_le_bytes([
+        let mut local_header_offset = u64::from(u32::from_le_bytes([
             entry_header[42],
             entry_header[43],
             entry_header[44],
             entry_header[45],
-        ]) as u64;
+        ]));
 
-        let mut compressed_size = u32::from_le_bytes([
+        let mut compressed_size = u64::from(u32::from_le_bytes([
             entry_header[20],
             entry_header[21],
             entry_header[22],
             entry_header[23],
-        ]) as u64;
+        ]));
 
-        let mut uncompressed_size = u32::from_le_bytes([
+        let mut uncompressed_size = u64::from(u32::from_le_bytes([
             entry_header[24],
             entry_header[25],
             entry_header[26],
             entry_header[27],
-        ]) as u64;
+        ]));
 
         // Read filename
         let mut filename = vec![0u8; filename_len];
@@ -220,9 +216,9 @@ impl ZipParser {
         reader.seek(SeekFrom::Current(comment_len as i64))?;
 
         // Handle ZIP64 extra fields
-        if local_header_offset == 0xFFFFFFFF
-            || compressed_size == 0xFFFFFFFF
-            || uncompressed_size == 0xFFFFFFFF
+        if local_header_offset == 0xFFFF_FFFF
+            || compressed_size == 0xFFFF_FFFF
+            || uncompressed_size == 0xFFFF_FFFF
         {
             let mut pos = 0;
             while pos + 4 <= extra_data.len() {
@@ -234,7 +230,7 @@ impl ZipParser {
                     let mut field_pos = pos + 4;
 
                     // Read ZIP64 fields in order: uncompressed_size, compressed_size, local_header_offset
-                    if uncompressed_size == 0xFFFFFFFF && field_pos + 8 <= pos + 4 + data_size {
+                    if uncompressed_size == 0xFFFF_FFFF && field_pos + 8 <= pos + 4 + data_size {
                         uncompressed_size = u64::from_le_bytes([
                             extra_data[field_pos],
                             extra_data[field_pos + 1],
@@ -248,7 +244,7 @@ impl ZipParser {
                         field_pos += 8;
                     }
 
-                    if compressed_size == 0xFFFFFFFF && field_pos + 8 <= pos + 4 + data_size {
+                    if compressed_size == 0xFFFF_FFFF && field_pos + 8 <= pos + 4 + data_size {
                         compressed_size = u64::from_le_bytes([
                             extra_data[field_pos],
                             extra_data[field_pos + 1],
@@ -262,7 +258,7 @@ impl ZipParser {
                         field_pos += 8;
                     }
 
-                    if local_header_offset == 0xFFFFFFFF && field_pos + 8 <= pos + 4 + data_size {
+                    if local_header_offset == 0xFFFF_FFFF && field_pos + 8 <= pos + 4 + data_size {
                         local_header_offset = u64::from_le_bytes([
                             extra_data[field_pos],
                             extra_data[field_pos + 1],
@@ -328,8 +324,8 @@ impl ZipParser {
             return Err(anyhow!("payload.bin is compressed, expected uncompressed"));
         }
 
-        let local_filename_len = u16::from_le_bytes([local_header[26], local_header[27]]) as u64;
-        let local_extra_len = u16::from_le_bytes([local_header[28], local_header[29]]) as u64;
+        let local_filename_len = u64::from(u16::from_le_bytes([local_header[26], local_header[27]]));
+        let local_extra_len = u64::from(u16::from_le_bytes([local_header[28], local_header[29]]));
 
         let data_offset = entry.offset + 30 + local_filename_len + local_extra_len;
         Ok(data_offset)

@@ -17,7 +17,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y aria2 cmake        
+          sudo apt-get install -y aria2 cmake
 
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
@@ -122,20 +122,20 @@ jobs:
          # wget https://zlib.net/zlib-1.3.1.tar.gz
           #tar -xzf zlib-1.3.1.tar.gz
          # cd zlib-1.3.1
-          
+
           #if [ "${{ env.NEED_CROSS }}" = "true" ]; then
            # echo "Cross-compiling zlib with ${{ env.CC }}"
             #./configure --prefix=${{ env.INSTALL_PREFIX }} --static
           #else
            # ./configure --prefix=${{ env.INSTALL_PREFIX }} --static
           #fi
-          
+
           #make -j$(nproc)
           #make install
-          
+
           ## Verify installation
           #ls -la ${{ env.INSTALL_PREFIX }}/lib/libz.a || echo "Failed to build libz.a"
-          
+
           # Create pkgconfig file if needed
           #mkdir -p ${{ env.INSTALL_PREFIX }}/lib/pkgconfig
           #cat > ${{ env.INSTALL_PREFIX }}/lib/pkgconfig/zlib.pc << EOF
@@ -143,11 +143,11 @@ jobs:
           #exec_prefix=\${prefix}
           #libdir=\${exec_prefix}/lib
           #includedir=\${prefix}/include
-          
+
           #Name: zlib
           #Description: zlib compression library
           #Version: 1.3.1
-          
+
           #Requires:
           #Libs: -L\${libdir} -lz
           #Cflags: -I\${includedir}
@@ -161,17 +161,17 @@ jobs:
         #  wget https://github.com/tukaani-project/xz/releases/download/v5.8.1/xz-5.8.1.tar.gz
          # tar -xzf xz-5.8.1.tar.gz
           #cd xz-5.8.1
-          
+
           #if [ "${{ env.NEED_CROSS }}" = "true" ]; then
            # echo "Cross-compiling liblzma with ${{ env.CC }}"
             #./configure --prefix=${{ env.INSTALL_PREFIX }} --disable-shared --enable-static --disable-nls --disable-xz --disable-xzdec --disable-lzmadec --disable-lzmainfo --host=${{ env.HOST_TRIPLE }}
          # else
           #  ./configure --prefix=${{ env.INSTALL_PREFIX }} --disable-shared --enable-static --disable-nls --disable-xz --disable-xzdec --disable-lzmadec --disable-lzmainfo
           #fi
-          
+
           #make -j$(nproc)
           #make install
-          
+
           # Verify installation
           #ls -la ${{ env.INSTALL_PREFIX }}/lib/liblzma.a || echo "Failed to build liblzma.a"
         #env:
@@ -186,10 +186,10 @@ jobs:
           #tar -xf libzip-1.11.4.tar.xz
           #cd libzip-1.11.4
           #mkdir build && cd build
-          
+
           #if [ "${{ env.NEED_CROSS }}" = "true" ]; then
            # echo "Cross-compiling libzip with ${{ env.CC }}"
-            
+
             # Create toolchain file for cross-compilation
             #cat > cross-toolchain.cmake << EOF
           #set(CMAKE_SYSTEM_NAME Linux)
@@ -201,7 +201,7 @@ jobs:
           #set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
           #set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
           #EOF
-            
+
            # cmake .. \
             #  -DCMAKE_TOOLCHAIN_FILE=cross-toolchain.cmake \
              # -DCMAKE_INSTALL_PREFIX=${{ env.INSTALL_PREFIX }} \
@@ -235,10 +235,10 @@ jobs:
               #-DZLIB_INCLUDE_DIR=${{ env.INSTALL_PREFIX }}/include \
               #-DZLIB_LIBRARY=${{ env.INSTALL_PREFIX }}/lib/libz.a
           #fi
-          
+
           #cmake --build . -j$(nproc)
           #cmake --install .
-          
+
           # Verify installation
           #ls -la ${{ env.INSTALL_PREFIX }}/lib/libzip.a || echo "Failed to build libzip.a"
         #env:

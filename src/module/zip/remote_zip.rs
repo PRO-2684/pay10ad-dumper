@@ -12,7 +12,7 @@ pub struct RemoteZipReader {
 
 impl RemoteZipReader {
     fn find_payload_via_metadata(http_reader: &mut HttpReader) -> Result<(u64, u64)> {
-        let search_size = std::cmp::min(http_reader.content_length, 131072);
+        let search_size = std::cmp::min(http_reader.content_length, 131_072);
         http_reader.seek(SeekFrom::End(-(search_size as i64)))?;
 
         let mut tail_buffer = vec![0u8; search_size as usize];
@@ -120,14 +120,14 @@ impl Seek for RemoteZipReader {
                 if offset >= 0 {
                     self.current_position.saturating_add(offset as u64)
                 } else {
-                    self.current_position.saturating_sub(offset.abs() as u64)
+                    self.current_position.saturating_sub(offset.unsigned_abs())
                 }
             }
             SeekFrom::End(offset) => {
                 if offset >= 0 {
                     self.payload_size.saturating_add(offset as u64)
                 } else {
-                    self.payload_size.saturating_sub(offset.abs() as u64)
+                    self.payload_size.saturating_sub(offset.unsigned_abs())
                 }
             }
         };

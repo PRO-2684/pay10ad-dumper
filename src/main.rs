@@ -1,3 +1,8 @@
+#![warn(clippy::all, clippy::nursery, clippy::pedantic, clippy::cargo)]
+#![allow(clippy::multiple_crate_versions, reason = "Dependency")]
+#![allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap, clippy::cast_sign_loss, clippy::cast_precision_loss, reason = "TBD")]
+#![allow(clippy::too_many_lines, clippy::cognitive_complexity, reason = "TBD")]
+
 mod module;
 use crate::module::args::Args;
 #[cfg(feature = "remote_ota")]
@@ -17,7 +22,6 @@ use byteorder::{BigEndian, ReadBytesExt};
 use clap::Parser;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 #[cfg(feature = "remote_ota")]
-use lazy_static::lazy_static;
 use prost::Message;
 use rayon::prelude::*;
 use std::collections::HashSet;
@@ -31,9 +35,7 @@ use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 
 #[cfg(feature = "remote_ota")]
-lazy_static! {
-    static ref FILE_SIZE_INFO_SHOWN: AtomicBool = AtomicBool::new(false);
-}
+static FILE_SIZE_INFO_SHOWN: AtomicBool = AtomicBool::new(false);
 
 include!("proto/update_metadata.rs");
 
@@ -119,25 +121,25 @@ fn main() -> Result<()> {
     let mut payload_reader: Box<dyn ReadSeek> = if is_url {
         #[cfg(feature = "remote_ota")]
         {
+            use std::path::Path;
+
             main_pb.set_message("Initializing remote connection...");
             let url = payload_path_str.clone();
-            let is_zip = url.ends_with(".zip");
+            let is_zip = Path::new(&url).extension().is_some_and(|ext| ext.eq_ignore_ascii_case("zip"));
 
-            let content_type = if !is_zip {
+            let content_type = if is_zip {
+                None
+            } else {
                 let http_reader = HttpReader::new_silent(url.clone(), &args.user_agent);
-                if let Ok(reader) = &http_reader {
+                http_reader.map_or(None, |reader| {
                     let file_size = reader.content_length;
                     main_pb.set_message("Connection established");
                     if file_size > 1024 * 1024 && !FILE_SIZE_INFO_SHOWN.swap(true, Ordering::SeqCst)
                     {
                         println!("- Remote file size: {}", format_size(file_size));
                     }
-                    reader.content_type.clone()
-                } else {
-                    None
-                }
-            } else {
-                None
+                    reader.content_type
+                })
             };
 
             if is_zip || content_type.as_deref() == Some("application/zip") {
@@ -221,7 +223,7 @@ fn main() -> Result<()> {
     }
 
     if let Some(security_patch) = &manifest.security_patch_level {
-        println!("- Security Patch: {}", security_patch);
+        println!("- Security Patch: {security_patch}");
     }
 
     #[cfg(feature = "metadata")]
@@ -232,7 +234,7 @@ fn main() -> Result<()> {
         match save_metadata(&manifest, &args.out, data_offset) {
             Ok(json) => {
                 if is_stdout {
-                    println!("{}", json);
+                    println!("{json}");
                 } else {
                     println!(
                         "✓ Metadata saved to: {}/payload_metadata.json",
@@ -260,17 +262,16 @@ fn main() -> Result<()> {
             match save_metadata(&manifest, &args.out, data_offset) {
                 Ok(json) => {
                     if is_stdout {
-                        println!("{}", json);
+                        println!("{json}");
                         return Ok(());
-                    } else {
-                        println!(
-                            "✓ Metadata saved to: {}/payload_metadata.json",
-                            args.out.display()
-                        );
                     }
+                    println!(
+                        "✓ Metadata saved to: {}/payload_metadata.json",
+                        args.out.display()
+                    );
                 }
                 Err(e) => {
-                    eprintln!("Failed to save metadata: {}", e);
+                    eprintln!("Failed to save metadata: {e}");
                 }
             }
         }
@@ -301,11 +302,7 @@ fn main() -> Result<()> {
         partitions_to_extract.len()
     ));
 
-    let use_parallel = ((!is_url
-        && (is_local_zip
-            || args.payload_path.extension().and_then(|e| e.to_str()) == Some("bin")))
-        || is_url)
-        && !args.no_parallel;
+    let use_parallel = (args.payload_path.extension().and_then(|e| e.to_str()) == Some("bin") || is_local_zip || is_url) && !args.no_parallel;
     main_pb.set_message(if use_parallel {
         "Extracting Partitions..."
     } else {
@@ -321,7 +318,7 @@ fn main() -> Result<()> {
         let payload_path = Arc::new(args.payload_path.to_str().unwrap_or_default().to_string());
         #[cfg(feature = "remote_ota")]
         let payload_url = Arc::new(if is_url {
-            payload_path_str.clone()
+            payload_path_str
         } else {
             String::new()
         });
@@ -340,7 +337,9 @@ fn main() -> Result<()> {
                     let active_readers = Arc::clone(&active_readers);
                     let partition_name = partition.partition_name.clone();
 
-                    let result = (0..max_retries)
+
+
+                    (0..max_retries)
                         .find_map(|attempt| {
                             if attempt > 0 {
                                 let delay = 100 * (1 << attempt.min(4));
@@ -413,7 +412,7 @@ fn main() -> Result<()> {
                             match dump_partition(
                                 partition,
                                 data_offset,
-                                block_size as u64,
+                                u64::from(block_size),
                                 &args,
                                 &mut reader,
                                 Some(&multi_progress),
@@ -430,15 +429,13 @@ fn main() -> Result<()> {
                         })
                         .unwrap_or_else(|| {
                             Err((partition_name, anyhow!("All retry attempts failed")))
-                        });
-
-                    result
+                        })
                 })
             })
             .collect();
         for result in results {
             if let Err((partition_name, error)) = result {
-                eprintln!("Failed to process partition {}: {}", partition_name, error);
+                eprintln!("Failed to process partition {partition_name}: {error}");
                 failed_partitions.push(partition_name);
             }
         }
@@ -470,7 +467,7 @@ fn main() -> Result<()> {
                 if let Err(e) = dump_partition(
                     partition,
                     data_offset,
-                    block_size as u64,
+                    u64::from(block_size),
                     &args,
                     &mut reader,
                     Some(&multi_progress),
@@ -489,7 +486,7 @@ fn main() -> Result<()> {
             if let Err(e) = dump_partition(
                 partition,
                 data_offset,
-                block_size as u64,
+                u64::from(block_size),
                 &args,
                 &mut payload_reader,
                 Some(&multi_progress),
@@ -503,7 +500,9 @@ fn main() -> Result<()> {
         }
     }
 
-    if !args.no_verify {
+    if args.no_verify {
+        main_pb.set_message("Hash verification skipped (--no-verify flag)");
+    } else {
         main_pb.set_message("Verifying partition hashes...");
 
         let partitions_to_verify: Vec<&PartitionUpdate> = partitions_to_extract
@@ -512,33 +511,24 @@ fn main() -> Result<()> {
             .copied()
             .collect();
 
-        match verify_partitions_hash(&partitions_to_verify, &args, &multi_progress) {
-            Ok(failed_verifications) => {
-                if !failed_verifications.is_empty() {
-                    eprintln!(
-                        "Hash verification failed for {} partitions.",
-                        failed_verifications.len()
-                    );
-                }
-            }
-            Err(e) => {
-                eprintln!("Error during hash verification: {}", e);
-            }
+        let failed_verifications = verify_partitions_hash(&partitions_to_verify, &args, &multi_progress);
+        if !failed_verifications.is_empty() {
+            eprintln!(
+                "Hash verification failed for {} partitions.",
+                failed_verifications.len()
+            );
         }
-    } else {
-        main_pb.set_message("Hash verification skipped (--no-verify flag)");
     }
 
     let elapsed_time = format_elapsed_time(start_time.elapsed());
 
     if failed_partitions.is_empty() {
         main_pb.finish_with_message(format!(
-            "All partitions extracted successfully! (in {})",
-            elapsed_time
+            "All partitions extracted successfully! (in {elapsed_time})"
         ));
         println!(
-            "\nExtraction completed successfully in {}. Output directory: {:?}",
-            elapsed_time, args.out
+            "\nExtraction completed successfully in {}. Output directory: {}",
+            elapsed_time, args.out.display()
         );
     } else {
         main_pb.finish_with_message(format!(
@@ -547,10 +537,10 @@ fn main() -> Result<()> {
             elapsed_time
         ));
         println!(
-            "\nExtraction completed with {} failed partitions in {}. Output directory: {:?}",
+            "\nExtraction completed with {} failed partitions in {}. Output directory: {}",
             failed_partitions.len(),
             elapsed_time,
-            args.out
+            args.out.display()
         );
     }
 

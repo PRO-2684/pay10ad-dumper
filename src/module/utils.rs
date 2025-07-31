@@ -87,11 +87,11 @@ pub fn format_elapsed_time(duration: Duration) -> String {
     let millis = duration.subsec_millis();
 
     if hours > 0 {
-        format!("{}h {}m {}.{:03}s", hours, mins, secs, millis)
+        format!("{hours}h {mins}m {secs}.{millis:03}s")
     } else if mins > 0 {
-        format!("{}m {}.{:03}s", mins, secs, millis)
+        format!("{mins}m {secs}.{millis:03}s")
     } else {
-        format!("{}.{:03}s", secs, millis)
+        format!("{secs}.{millis:03}s")
     }
 }
 
@@ -107,7 +107,7 @@ pub fn format_size(size: u64) -> String {
     } else if size >= KB {
         format!("{:.2} KB", size as f64 / KB as f64)
     } else {
-        format!("{} bytes", size)
+        format!("{size} bytes")
     }
 }
 

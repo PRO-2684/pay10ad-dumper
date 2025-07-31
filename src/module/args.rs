@@ -1,6 +1,7 @@
 use clap::Parser;
 use std::path::PathBuf;
 
+#[allow(clippy::struct_excessive_bools, reason = "Clap")]
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 #[command(next_line_help = true)]

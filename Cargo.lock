@@ -1182,7 +1182,6 @@ dependencies = [
  "digest",
  "hex",
  "indicatif",
- "lazy_static",
  "memmap2",
  "num_cpus",
  "once_cell",

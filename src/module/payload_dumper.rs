@@ -38,8 +38,7 @@ pub fn process_operation(
     if let Some(expected_hash) = op.data_sha256_hash.as_deref() {
         if !verify_hash(&data, expected_hash) {
             println!(
-                "  Warning: Operation {} data hash mismatch.",
-                operation_index
+                "  Warning: Operation {operation_index} data hash mismatch."
             );
             return Ok(());
         }
@@ -97,8 +96,7 @@ pub fn process_operation(
                     }
                     Err(e) => {
                         println!(
-                            "  Warning: Skipping operation {} due to XZ decompression error: {}",
-                            operation_index, e
+                            "  Warning: Skipping operation {operation_index} due to XZ decompression error: {e}"
                         );
                         return Ok(());
                     }
@@ -124,8 +122,7 @@ pub fn process_operation(
                         pos = end_pos;
                     } else {
                         println!(
-                            "  Warning: Skipping extent in operation {} due to insufficient decompressed data.",
-                            operation_index
+                            "  Warning: Skipping extent in operation {operation_index} due to insufficient decompressed data."
                         );
                         break;
                     }
@@ -133,8 +130,7 @@ pub fn process_operation(
             }
             Err(e) => {
                 println!(
-                    "  Warning: Skipping operation {} due to unknown Zstd format: {}",
-                    operation_index, e
+                    "  Warning: Skipping operation {operation_index} due to unknown Zstd format: {e}"
                 );
                 return Ok(());
             }
@@ -151,8 +147,7 @@ pub fn process_operation(
                 }
                 Err(e) => {
                     println!(
-                        " Warning: Skipping operation {} due to unknown BZ2 format.  : {}",
-                        operation_index, e
+                        " Warning: Skipping operation {operation_index} due to unknown BZ2 format.  : {e}"
                     );
                     return Ok(());
                 }
@@ -237,8 +232,7 @@ pub fn process_operation(
         }
         _ => {
             println!(
-                "  Warning: Skipping operation {} due to unknown compression method",
-                operation_index
+                "  Warning: Skipping operation {operation_index} due to unknown compression method"
             );
             return Ok(());
         }
@@ -256,23 +250,21 @@ pub fn dump_partition(
 ) -> Result<()> {
     let partition_name = &partition.partition_name;
     let total_ops = partition.operations.len() as u64;
-    let progress_bar = if let Some(mp) = multi_progress {
+    let progress_bar = multi_progress.map_or_else(|| None, |mp| {
         let pb = mp.add(ProgressBar::new(100));
         pb.set_style(ProgressStyle::default_bar()
             .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/white}] {percent}% - {msg}")
             .unwrap()
             .progress_chars("▰▱"));
         pb.enable_steady_tick(Duration::from_millis(500));
-        pb.set_message(format!("Processing {} ({} ops)", partition_name, total_ops));
+        pb.set_message(format!("Processing {partition_name} ({total_ops} ops)"));
         Some(pb)
-    } else {
-        None
-    };
+    });
     let out_dir = &args.out;
     if args.out.to_string_lossy() != "-" {
         fs::create_dir_all(out_dir)?;
     }
-    let out_path = out_dir.join(format!("{}.img", partition_name));
+    let out_path = out_dir.join(format!("{partition_name}.img"));
     let mut out_file = File::create(&out_path)?;
 
     if let Some(info) = &partition.new_partition_info {
@@ -331,16 +323,15 @@ pub fn dump_partition(
     }
     if let Some(pb) = progress_bar {
         pb.finish_with_message(format!(
-            "✓ Completed {} ({} ops)",
-            partition_name, total_ops
+            "✓ Completed {partition_name} ({total_ops} ops)"
         ));
     }
     drop(out_file);
     let mut out_file = File::open(&out_path)
-        .with_context(|| format!("Failed to reopen {} for hash verification", partition_name))?;
+        .with_context(|| format!("Failed to reopen {partition_name} for hash verification"))?;
     if let Some(info) = &partition.new_partition_info {
-        if info.hash.as_ref().map_or(true, |hash| hash.is_empty()) {
-            let hash_pb = if let Some(mp) = multi_progress {
+        if info.hash.as_ref().is_none_or(std::vec::Vec::is_empty) {
+            let hash_pb = multi_progress.map_or_else(|| None, |mp| {
                 let pb = mp.add(ProgressBar::new_spinner());
                 pb.set_style(
                     ProgressStyle::default_spinner()
@@ -348,20 +339,18 @@ pub fn dump_partition(
                         .unwrap(),
                 );
                 pb.enable_steady_tick(Duration::from_millis(100));
-                pb.set_message(format!("Verifying hash for {}", partition_name));
+                pb.set_message(format!("Verifying hash for {partition_name}"));
                 Some(pb)
-            } else {
-                None
-            };
+            });
             out_file.seek(SeekFrom::Start(0))?;
             let mut hasher = Sha256::new();
             io::copy(&mut out_file, &mut hasher)?;
             let hash = hasher.finalize();
             if let Some(pb) = hash_pb {
-                if hash.as_slice() != info.hash.as_deref().unwrap_or(&[]) {
-                    pb.finish_with_message(format!("✕ Hash mismatch for {}", partition_name));
+                if hash.as_slice() == info.hash.as_deref().unwrap_or(&[]) {
+                    pb.finish_with_message(format!("✓ Hash verified for {partition_name}"));
                 } else {
-                    pb.finish_with_message(format!("✓ Hash verified for {}", partition_name));
+                    pb.finish_with_message(format!("✕ Hash mismatch for {partition_name}"));
                 }
             }
         }
@@ -375,68 +364,67 @@ pub fn create_payload_reader(path: &PathBuf) -> Result<Box<dyn ReadSeek>> {
     let file_size = file.metadata()?.len();
 
     if file_size > 10 * 1024 * 1024 {
-        match unsafe { memmap2::Mmap::map(&file) } {
-            Ok(mmap) => {
-                struct MmapReader {
-                    mmap: memmap2::Mmap,
-                    position: u64,
-                }
-
-                impl Read for MmapReader {
-                    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-                        let start = self.position as usize;
-                        if start >= self.mmap.len() {
-                            return Ok(0); // EOF
-                        }
-
-                        let end = std::cmp::min(start + buf.len(), self.mmap.len());
-                        let bytes_to_read = end - start;
-
-                        buf[..bytes_to_read].copy_from_slice(&self.mmap[start..end]);
-                        self.position += bytes_to_read as u64;
-
-                        Ok(bytes_to_read)
-                    }
-                }
-
-                impl Seek for MmapReader {
-                    fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
-                        let new_pos = match pos {
-                            SeekFrom::Start(offset) => offset,
-                            SeekFrom::Current(offset) => {
-                                if offset >= 0 {
-                                    self.position.saturating_add(offset as u64)
-                                } else {
-                                    self.position.saturating_sub(offset.abs() as u64)
-                                }
-                            }
-                            SeekFrom::End(offset) => {
-                                let file_size = self.mmap.len() as u64;
-                                if offset >= 0 {
-                                    file_size.saturating_add(offset as u64)
-                                } else {
-                                    file_size.saturating_sub(offset.abs() as u64)
-                                }
-                            }
-                        };
-
-                        if new_pos > self.mmap.len() as u64 {
-                            return Err(io::Error::new(
-                                io::ErrorKind::InvalidInput,
-                                "Attempted to seek past end of file",
-                            ));
-                        }
-
-                        self.position = new_pos;
-                        Ok(self.position)
-                    }
-                }
-
-                return Ok(Box::new(MmapReader { mmap, position: 0 }) as Box<dyn ReadSeek>);
-            }
-            Err(_) => Ok(Box::new(file) as Box<dyn ReadSeek>),
-        }
+        unsafe { memmap2::Mmap::map(&file) }
+            .map_or_else(
+                |_| Ok(Box::new(file) as Box<dyn ReadSeek>),
+                |mmap| Ok(Box::new(MmapReader { mmap, position: 0 }) as Box<dyn ReadSeek>)
+            )
     } else {
         Ok(Box::new(file) as Box<dyn ReadSeek>)
+    }
+}
+
+struct MmapReader {
+    mmap: memmap2::Mmap,
+    position: u64,
+}
+
+impl Read for MmapReader {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        let start = self.position as usize;
+        if start >= self.mmap.len() {
+            return Ok(0); // EOF
+        }
+
+        let end = std::cmp::min(start + buf.len(), self.mmap.len());
+        let bytes_to_read = end - start;
+
+        buf[..bytes_to_read].copy_from_slice(&self.mmap[start..end]);
+        self.position += bytes_to_read as u64;
+
+        Ok(bytes_to_read)
+    }
+}
+
+impl Seek for MmapReader {
+    fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
+        let new_pos = match pos {
+            SeekFrom::Start(offset) => offset,
+            SeekFrom::Current(offset) => {
+                if offset >= 0 {
+                    self.position.saturating_add(offset as u64)
+                } else {
+                    self.position.saturating_sub(offset.unsigned_abs())
+                }
+            }
+            SeekFrom::End(offset) => {
+                let file_size = self.mmap.len() as u64;
+                if offset >= 0 {
+                    file_size.saturating_add(offset as u64)
+                } else {
+                    file_size.saturating_sub(offset.unsigned_abs())
+                }
+            }
+        };
+
+        if new_pos > self.mmap.len() as u64 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Attempted to seek past end of file",
+            ));
+        }
+
+        self.position = new_pos;
+        Ok(self.position)
     }
 }

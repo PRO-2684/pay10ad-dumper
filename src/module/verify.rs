@@ -32,9 +32,9 @@ pub fn verify_partitions_hash(
     partitions: &[&PartitionUpdate],
     args: &Args,
     multi_progress: &MultiProgress,
-) -> Result<Vec<String>> {
+) -> Vec<String> {
     if args.no_verify {
-        return Ok(vec![]);
+        return vec![];
     }
 
     let verification_pb = multi_progress.add(ProgressBar::new_spinner());
@@ -70,7 +70,7 @@ pub fn verify_partitions_hash(
         .par_iter()
         .map(|partition| {
             let partition_name = &partition.partition_name;
-            let out_path = out_dir.join(format!("{}.img", partition_name));
+            let out_path = out_dir.join(format!("{partition_name}.img"));
 
             let expected_hash = partition
                 .new_partition_info
@@ -83,7 +83,7 @@ pub fn verify_partitions_hash(
                 .map(|(_, pb)| pb.clone());
 
             if let Some(pb) = &pb {
-                pb.set_message(format!("Verifying {}", partition_name));
+                pb.set_message(format!("Verifying {partition_name}"));
             }
 
             let result = verify_partition_hash(partition_name, &out_path, expected_hash, pb);
@@ -92,7 +92,7 @@ pub fn verify_partitions_hash(
                 Ok(true) => Ok(partition_name.clone()),
                 Ok(false) => Err(partition_name.clone()),
                 Err(e) => {
-                    eprintln!("Error verifying hash for {}: {}", partition_name, e);
+                    eprintln!("Error verifying hash for {partition_name}: {e}");
                     Err(partition_name.clone())
                 }
             }
@@ -114,7 +114,7 @@ pub fn verify_partitions_hash(
         ));
     }
 
-    Ok(failed_verifications)
+    failed_verifications
 }
 
 pub fn verify_partition_hash(
@@ -126,13 +126,13 @@ pub fn verify_partition_hash(
     if let Some(expected) = expected_hash {
         if expected.is_empty() {
             if let Some(pb) = progress_bar {
-                pb.finish_with_message(format!("No hash for {}", partition_name));
+                pb.finish_with_message(format!("No hash for {partition_name}"));
             }
             return Ok(true);
         }
 
         let file = File::open(out_path)
-            .with_context(|| format!("Failed to open {} for hash verification", partition_name))?;
+            .with_context(|| format!("Failed to open {partition_name} for hash verification"))?;
 
         let file_size = file.metadata().map(|m| m.len()).unwrap_or(0);
 
@@ -147,27 +147,23 @@ pub fn verify_partition_hash(
         let mut hasher = Sha256::new();
 
         if file_size > 10 * 1024 * 1024 {
-            match unsafe { memmap2::Mmap::map(&file) } {
-                Ok(mmap) => {
-                    hasher.update(&mmap[..]);
+            if let Ok(mmap) = unsafe { memmap2::Mmap::map(&file) } {
+                hasher.update(&mmap[..]);
 
-                    let hash = hasher.finalize();
-                    let matches = hash.as_slice() == expected.as_slice();
+                let hash = hasher.finalize();
+                let matches = hash.as_slice() == expected.as_slice();
 
-                    if let Some(pb) = progress_bar {
-                        if matches {
-                            pb.finish_with_message(format!("✓ {} verified", partition_name));
-                        } else {
-                            pb.finish_with_message(format!("✕ {} mismatch", partition_name));
-                        }
+                if let Some(pb) = progress_bar {
+                    if matches {
+                        pb.finish_with_message(format!("✓ {partition_name} verified"));
+                    } else {
+                        pb.finish_with_message(format!("✕ {partition_name} mismatch"));
                     }
+                }
 
-                    return Ok(matches);
-                }
-                Err(_) => {
-                    // Fall back
-                }
+                return Ok(matches);
             }
+            // Fall back
         }
 
         let buffer_size = if file_size < 1024 * 1024 {
@@ -195,16 +191,16 @@ pub fn verify_partition_hash(
 
         if let Some(pb) = progress_bar {
             if matches {
-                pb.finish_with_message(format!("✓ {} verified", partition_name));
+                pb.finish_with_message(format!("✓ {partition_name} verified"));
             } else {
-                pb.finish_with_message(format!("✕ {} mismatch", partition_name));
+                pb.finish_with_message(format!("✕ {partition_name} mismatch"));
             }
         }
 
         Ok(matches)
     } else {
         if let Some(pb) = progress_bar {
-            pb.finish_with_message(format!("No hash for {}", partition_name));
+            pb.finish_with_message(format!("No hash for {partition_name}"));
         }
         Ok(true)
     }
