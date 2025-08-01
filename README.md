@@ -46,7 +46,7 @@ cargo install pay10ad-dumper
 
 </summary>
 
-![sample-online-zip.png](images/sample-online-zip.png)
+![sample-remote-zip.png](images/sample-remote-zip.png)
 
 </details>
 
