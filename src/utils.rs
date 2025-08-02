@@ -1,10 +1,13 @@
-use crate::ReadSeek;
-use crate::proto::{DeltaArchiveManifest, install_operation};
+use std::{io::SeekFrom, time::Duration};
+
 use anyhow::{Result, bail};
 use byteorder::{BigEndian, ReadBytesExt};
 use prost::Message;
-use std::io::SeekFrom;
-use std::time::Duration;
+
+use crate::{
+    ReadSeek,
+    proto::{DeltaArchiveManifest, install_operation},
+};
 
 #[must_use]
 pub fn is_differential_ota(manifest: &DeltaArchiveManifest) -> bool {

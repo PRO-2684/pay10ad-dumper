@@ -1,13 +1,15 @@
-use crate::proto::{DeltaArchiveManifest, DynamicPartitionMetadata, install_operation};
-use crate::structs::{
-    ApexInfoMetadata, DynamicPartitionGroupInfo, DynamicPartitionInfo, PartitionMetadata,
-    PayloadMetadata, VabcFeatureSetInfo,
-};
-use crate::utils::format_size;
+use std::{fs, path::Path};
+
 use anyhow::Result;
-use serde_json;
-use std::fs;
-use std::path::Path;
+
+use crate::{
+    proto::{DeltaArchiveManifest, DynamicPartitionMetadata, install_operation},
+    structs::{
+        ApexInfoMetadata, DynamicPartitionGroupInfo, DynamicPartitionInfo, PartitionMetadata,
+        PayloadMetadata, VabcFeatureSetInfo,
+    },
+    utils::format_size,
+};
 
 pub fn save_metadata(
     manifest: &DeltaArchiveManifest,

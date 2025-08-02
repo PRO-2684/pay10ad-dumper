@@ -1,5 +1,6 @@
-use clap::Parser;
 use std::path::PathBuf;
+
+use clap::Parser;
 
 #[allow(clippy::struct_excessive_bools, reason = "Clap")]
 #[derive(Parser)]

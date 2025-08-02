@@ -127,6 +127,13 @@ Additional explanation:
     - `🟢`: Yes
     - `🟡`: Not tested
 
+## 🛣️ Todo
+
+- [ ] Async
+- [ ] Better errors
+- [ ] Use another CLI parser
+- [ ] Customize HTTP headers
+
 ## 🎉 Credits
 
 - Forked from [rhythmcache/payload-dumper-rust](https://github.com/rhythmcache/payload-dumper-rust) to scratch my own itch (Set User-Agent)

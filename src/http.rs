@@ -1,13 +1,17 @@
-use crate::utils::format_size;
+use std::{
+    io::{self, Read, Seek, SeekFrom},
+    sync::atomic::{AtomicBool, Ordering},
+    time::Duration,
+};
+
 use anyhow::{Context, Result, anyhow};
 use reqwest::{
     blocking::{Client, Response},
     header,
 };
-use std::io::{self, Read, Seek, SeekFrom};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::Duration;
-use url;
+use url::Url;
+
+use crate::utils::format_size;
 
 static ACCEPT_RANGES_WARNING_SHOWN: AtomicBool = AtomicBool::new(false);
 static FILE_SIZE_INFO_SHOWN: AtomicBool = AtomicBool::new(false);
@@ -67,7 +71,7 @@ impl HttpReader {
 
     fn new_internal(url: String, print_size: bool, user_agent: &str) -> Result<Self> {
         let client = Self::create_client(user_agent).with_context(|| "Failed to build client")?;
-        let parsed_url = url::Url::parse(&url).map_err(|e| anyhow!("Invalid URL: {e}"))?;
+        let parsed_url = Url::parse(&url).map_err(|e| anyhow!("Invalid URL: {e}"))?;
 
         let _host = parsed_url
             .host_str()

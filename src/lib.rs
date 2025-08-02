@@ -7,7 +7,13 @@
     clippy::cast_precision_loss,
     reason = "TBD"
 )]
-#![allow(clippy::too_many_lines, clippy::cognitive_complexity, clippy::missing_errors_doc, clippy::missing_panics_doc, reason = "TBD")]
+#![allow(
+    clippy::too_many_lines,
+    clippy::cognitive_complexity,
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc,
+    reason = "TBD"
+)]
 
 pub mod args;
 pub mod http;

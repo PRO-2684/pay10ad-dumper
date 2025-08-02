@@ -1,5 +1,6 @@
-use anyhow::{Result, anyhow, bail};
 use std::io::{Read, Seek, SeekFrom};
+
+use anyhow::{Result, anyhow, bail};
 
 // ZIP signatures
 pub const LOCAL_FILE_HEADER_SIGNATURE: [u8; 4] = [0x50, 0x4B, 0x03, 0x04];

@@ -1,18 +1,23 @@
-use crate::ReadSeek;
-use crate::args::Args;
-use crate::patch::bspatch;
-use crate::proto::{InstallOperation, PartitionUpdate, install_operation};
-use crate::verify::verify_hash;
-use crate::verify::verify_old_partition;
+use std::{
+    fs::{self, File},
+    io::{self, Cursor, Read, Seek, SeekFrom, Write},
+    path::PathBuf,
+    time::Duration,
+};
+
 use anyhow::{Context, Result, anyhow, bail};
 use bzip2::read::BzDecoder;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use sha2::{Digest, Sha256};
-use std::fs::{self, File};
-use std::io::{self, Cursor, Read, Seek, SeekFrom, Write};
-use std::path::PathBuf;
-use std::time::Duration;
 use xz4rust::{XzDecoder, XzNextBlockResult};
+
+use crate::{
+    ReadSeek,
+    args::Args,
+    patch::bspatch,
+    proto::{InstallOperation, PartitionUpdate, install_operation},
+    verify::{verify_hash, verify_old_partition},
+};
 
 pub fn process_operation(
     operation_index: usize,

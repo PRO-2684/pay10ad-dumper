@@ -1,6 +1,6 @@
-use anyhow::{Result, anyhow};
-use bsdiff;
 use std::io::Cursor;
+
+use anyhow::{Result, anyhow};
 
 /// Apply a bsdiff patch to old data to produce new data
 pub fn bspatch(old_data: &[u8], patch_data: &[u8]) -> Result<Vec<u8>> {
@@ -8,7 +8,7 @@ pub fn bspatch(old_data: &[u8], patch_data: &[u8]) -> Result<Vec<u8>> {
     let mut patch_cursor = Cursor::new(patch_data);
 
     bsdiff::patch(old_data, &mut patch_cursor, &mut new_data)
-        .map_err(|e| anyhow!("bsdiff patch failed: {}", e))?;
+        .map_err(|e| anyhow!("bsdiff patch failed: {e}"))?;
 
     Ok(new_data)
 }

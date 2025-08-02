@@ -1,18 +1,22 @@
-use crate::ReadSeek;
-use crate::args::Args;
-use crate::proto::{PartitionInfo, PartitionUpdate};
-use crate::utils::format_size;
-use anyhow::bail;
-use anyhow::{Context, Result};
+use std::{
+    fs::File,
+    io::{Read, SeekFrom},
+    path::PathBuf,
+    time::Duration,
+};
+
+use anyhow::{Context, Result, bail};
 use digest::Digest;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use rayon::prelude::*;
 use sha2::Sha256;
-use std::fs::File;
-use std::io::Read;
-use std::io::SeekFrom;
-use std::path::PathBuf;
-use std::time::Duration;
+
+use crate::{
+    ReadSeek,
+    args::Args,
+    proto::{PartitionInfo, PartitionUpdate},
+    utils::format_size,
+};
 
 #[must_use]
 pub fn verify_hash(data: &[u8], expected_hash: &[u8]) -> bool {

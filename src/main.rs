@@ -9,30 +9,34 @@
 )]
 #![allow(clippy::too_many_lines, clippy::cognitive_complexity, reason = "TBD")]
 
+use std::{
+    collections::HashSet,
+    fs::{self, File},
+    io::{Read, Seek, SeekFrom},
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    time::{Duration, Instant},
+};
+
 use anyhow::{Result, anyhow, bail};
 use byteorder::{BigEndian, ReadBytesExt};
 use clap::Parser;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use pay10ad_dumper::ReadSeek;
-use pay10ad_dumper::args::Args;
-use pay10ad_dumper::http::HttpReader;
-use pay10ad_dumper::metadata::save_metadata;
-use pay10ad_dumper::payload_dumper::{create_payload_reader, dump_partition};
-use pay10ad_dumper::proto::{DeltaArchiveManifest, PartitionUpdate};
-use pay10ad_dumper::utils::list_partitions;
-use pay10ad_dumper::utils::{format_elapsed_time, format_size, is_differential_ota};
-use pay10ad_dumper::verify::verify_partitions_hash;
-use pay10ad_dumper::zip::local_zip::ZipPayloadReader;
-use pay10ad_dumper::zip::remote_zip::RemoteZipReader;
+use pay10ad_dumper::{
+    ReadSeek,
+    args::Args,
+    http::HttpReader,
+    metadata::save_metadata,
+    payload_dumper::{create_payload_reader, dump_partition},
+    proto::{DeltaArchiveManifest, PartitionUpdate},
+    utils::{format_elapsed_time, format_size, is_differential_ota, list_partitions},
+    verify::verify_partitions_hash,
+    zip::{local_zip::ZipPayloadReader, remote_zip::RemoteZipReader},
+};
 use prost::Message;
 use rayon::prelude::*;
-use std::collections::HashSet;
-use std::fs::{self, File};
-use std::io::{Read, Seek, SeekFrom};
-use std::sync::Arc;
-use std::sync::atomic::AtomicBool;
-use std::sync::atomic::Ordering;
-use std::time::{Duration, Instant};
 
 static FILE_SIZE_INFO_SHOWN: AtomicBool = AtomicBool::new(false);
 
@@ -309,13 +313,13 @@ fn main() -> Result<()> {
                                     ZipPayloadReader::new_for_parallel((*payload_path).clone())
                                         .map(|reader| Box::new(reader) as Box<dyn ReadSeek>)
                                         .map_err(|e| {
-                                            anyhow::anyhow!("Failed to create ZIP reader: {}", e)
+                                            anyhow::anyhow!("Failed to create ZIP reader: {e}")
                                         }); // Convert io::Error to anyhow::Error
                                 active_readers.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
                                 result
                             } else {
                                 create_payload_reader(&args.payload_path).map_err(|e| {
-                                    anyhow::anyhow!("Failed to create payload reader: {}", e)
+                                    anyhow::anyhow!("Failed to create payload reader: {e}")
                                 })
                             };
 

@@ -1,7 +1,8 @@
-use crate::http::HttpReader;
-use crate::zip::zip_core::ZipParser;
-use anyhow::{Result, anyhow};
 use std::io::{self, Read, Seek, SeekFrom};
+
+use anyhow::{Result, anyhow};
+
+use crate::{http::HttpReader, zip::zip_core::ZipParser};
 
 pub struct RemoteZipReader {
     pub http_reader: HttpReader,

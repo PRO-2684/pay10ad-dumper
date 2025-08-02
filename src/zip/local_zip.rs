@@ -1,7 +1,10 @@
+use std::{
+    collections::HashMap,
+    io::{Error, ErrorKind, Read, Result as IoResult, Seek, SeekFrom},
+    path::Path,
+};
+
 use crate::zip::zip_core::{ZipEntry, ZipParser};
-use std::collections::HashMap;
-use std::io::{Error, ErrorKind, Read, Result as IoResult, Seek, SeekFrom};
-use std::path::Path;
 
 pub struct ZipDecoder<R: Read + Seek> {
     reader: R,
