@@ -69,7 +69,7 @@ jobs:
     - name: Test
       run: cargo test --target ${{ matrix.target }}
     - name: Build release binary
-      run: cargo build --target ${{ matrix.target }} --verbose --release --bin ${{ env.BIN_NAME }}
+      run: cargo build --target ${{ matrix.target }} --verbose --release --bin ${{ env.BIN_NAME }} --features=cli
     - name: Build archive
       shell: bash
       run: |

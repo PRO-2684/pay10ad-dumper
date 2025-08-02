@@ -15,6 +15,7 @@
     reason = "TBD"
 )]
 
+#[cfg(feature = "cli")]
 pub mod args;
 pub mod http;
 pub mod metadata;

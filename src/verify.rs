@@ -8,7 +8,7 @@ use std::{
 use anyhow::{Context, Result, bail};
 use digest::Digest;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use rayon::prelude::*;
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use sha2::Sha256;
 
 use crate::{

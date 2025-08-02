@@ -36,7 +36,10 @@ use pay10ad_dumper::{
     zip::{local_zip::ZipPayloadReader, remote_zip::RemoteZipReader},
 };
 use prost::Message;
-use rayon::prelude::*;
+use rayon::{
+    iter::{IntoParallelRefIterator, ParallelIterator},
+    slice::ParallelSlice,
+};
 
 static FILE_SIZE_INFO_SHOWN: AtomicBool = AtomicBool::new(false);
 
