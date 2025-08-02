@@ -1,10 +1,8 @@
-use crate::proto::{InstallOperation, PartitionUpdate, install_operation};
 use crate::ReadSeek;
 use crate::args::Args;
-#[cfg(feature = "differential_ota")]
 use crate::patch::bspatch;
+use crate::proto::{InstallOperation, PartitionUpdate, install_operation};
 use crate::verify::verify_hash;
-#[cfg(feature = "differential_ota")]
 use crate::verify::verify_old_partition;
 use anyhow::{Context, Result, anyhow, bail};
 use bzip2::read::BzDecoder;
@@ -23,8 +21,7 @@ pub fn process_operation(
     block_size: u64,
     payload_file: &mut (impl Read + Seek),
     out_file: &mut (impl Write + Seek),
-    #[cfg(feature = "differential_ota")] old_file: Option<&mut dyn ReadSeek>,
-    #[cfg(not(feature = "differential_ota"))] _old_file: Option<&mut dyn ReadSeek>,
+    old_file: Option<&mut dyn ReadSeek>,
 ) -> Result<()> {
     payload_file.seek(SeekFrom::Start(data_offset + op.data_offset.unwrap_or(0)))?;
     let mut data = vec![0u8; op.data_length.unwrap_or(0) as usize];
@@ -122,7 +119,6 @@ pub fn process_operation(
             ))?;
             out_file.write_all(&data)?;
         }
-        #[cfg(feature = "differential_ota")]
         install_operation::Type::SourceCopy => {
             let old_file = old_file
                 .ok_or_else(|| anyhow!("SOURCE_COPY supported only for differential OTA"))?;
@@ -136,7 +132,6 @@ pub fn process_operation(
                 out_file.write_all(&buffer)?;
             }
         }
-        #[cfg(feature = "differential_ota")]
         install_operation::Type::SourceBsdiff | install_operation::Type::BrotliBsdiff => {
             let old_file =
                 old_file.ok_or_else(|| anyhow!("BSDIFF supported only for differential OTA"))?;
@@ -152,8 +147,7 @@ pub fn process_operation(
                 Ok(new_data) => new_data,
                 Err(e) => {
                     println!(
-                        "  Warning: Skipping operation {} due to failed BSDIFF patch.  : {}",
-                        operation_index, e
+                        "  Warning: Skipping operation {operation_index} due to failed BSDIFF patch.  : {e}"
                     );
                     return Ok(());
                 }
@@ -168,8 +162,7 @@ pub fn process_operation(
                     pos = end_pos;
                 } else {
                     println!(
-                        "  Warning: Skipping operation {} due to insufficient patched data.  .",
-                        operation_index
+                        "  Warning: Skipping operation {operation_index} due to insufficient patched data.  ."
                     );
                     return Ok(());
                 }
@@ -183,12 +176,6 @@ pub fn process_operation(
                     out_file.write_all(&zeros)?;
                 }
             }
-        }
-        #[cfg(not(feature = "differential_ota"))]
-        install_operation::Type::SourceCopy
-        | install_operation::Type::SourceBsdiff
-        | install_operation::Type::BrotliBsdiff => {
-            bail!("Operation {operation_index} requires differential_ota feature to be enabled");
         }
         _ => {
             println!(
@@ -240,7 +227,6 @@ pub fn dump_partition(
         }
     }
 
-    #[cfg(feature = "differential_ota")]
     let mut old_file = if args.diff {
         let old_path = args.old.join(format!("{partition_name}.img"));
         let mut file = File::open(&old_path)
@@ -257,9 +243,6 @@ pub fn dump_partition(
     } else {
         None
     };
-
-    #[cfg(not(feature = "differential_ota"))]
-    let mut old_file: Option<File> = None;
 
     for (i, op) in partition.operations.iter().enumerate() {
         process_operation(

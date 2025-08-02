@@ -13,12 +13,10 @@ pub struct Args {
     #[arg(long, short, default_value = "output")]
     pub out: PathBuf,
 
-    #[cfg(feature = "differential_ota")]
     /// Enable differential OTA mode (requires --old)
     #[arg(long)]
     pub diff: bool,
 
-    #[cfg(feature = "differential_ota")]
     /// Path to the directory containing old partition images (required for --diff)
     #[arg(long, default_value = "old")]
     pub old: PathBuf,
@@ -31,24 +29,12 @@ pub struct Args {
     #[arg(long)]
     pub threads: Option<usize>,
 
-    #[cfg(feature = "differential_ota")]
     /// List available partitions in the payload
     #[arg(long, conflicts_with_all = &["diff", "old", "partitions", "threads"])]
     pub list: bool,
 
-    #[cfg(not(feature = "differential_ota"))]
-    /// List available partitions in the payload
-    #[arg(long, short, conflicts_with_all = &["partitions", "threads"])]
-    pub list: bool,
-
-    #[cfg(feature = "differential_ota")]
     /// Save complete metadata as JSON (use --out - to write to stdout)
-    #[arg(long, conflicts_with_all = &["diff", "old", "partitions"], hide = cfg!(not(feature = "metadata")))]
-    pub metadata: bool,
-
-    #[cfg(not(feature = "differential_ota"))]
-    /// Save complete metadata as JSON (use --out - to write to stdout)
-    #[arg(long, conflicts_with_all = &["partitions"], hide = cfg!(not(feature = "metadata")))]
+    #[arg(long, conflicts_with_all = &["diff", "old", "partitions"])]
     pub metadata: bool,
 
     /// Disable parallel extraction

@@ -1,17 +1,24 @@
+#![warn(clippy::all, clippy::nursery, clippy::pedantic, clippy::cargo)]
+#![allow(clippy::multiple_crate_versions, reason = "Dependency")]
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss,
+    reason = "TBD"
+)]
+#![allow(clippy::too_many_lines, clippy::cognitive_complexity, clippy::missing_errors_doc, clippy::missing_panics_doc, reason = "TBD")]
+
 pub mod args;
-#[cfg(feature = "remote_ota")]
 pub mod http;
-#[cfg(feature = "metadata")]
 pub mod metadata;
-#[cfg(feature = "differential_ota")]
 pub mod patch;
 pub mod payload_dumper;
-#[cfg(feature = "metadata")]
+pub mod proto;
 pub mod structs;
 pub mod utils;
 pub mod verify;
 pub mod zip;
-pub mod proto;
 
 use std::io::{Read, Seek};
 

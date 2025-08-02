@@ -1,11 +1,12 @@
-use crate::proto::{DeltaArchiveManifest, install_operation};
 use crate::ReadSeek;
+use crate::proto::{DeltaArchiveManifest, install_operation};
 use anyhow::{Result, bail};
 use byteorder::{BigEndian, ReadBytesExt};
 use prost::Message;
 use std::io::SeekFrom;
 use std::time::Duration;
 
+#[must_use]
 pub fn is_differential_ota(manifest: &DeltaArchiveManifest) -> bool {
     manifest.partitions.iter().any(|partition| {
         partition.operations.iter().any(|op| {
@@ -19,6 +20,7 @@ pub fn is_differential_ota(manifest: &DeltaArchiveManifest) -> bool {
     })
 }
 
+#[must_use]
 pub fn format_elapsed_time(duration: Duration) -> String {
     let total_secs = duration.as_secs();
     let hours = total_secs / 3600;
@@ -35,6 +37,7 @@ pub fn format_elapsed_time(duration: Duration) -> String {
     }
 }
 
+#[must_use]
 pub fn format_size(size: u64) -> String {
     const KB: u64 = 1024;
     const MB: u64 = KB * 1024;

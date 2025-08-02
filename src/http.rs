@@ -5,21 +5,9 @@ use reqwest::{
     header,
 };
 use std::io::{self, Read, Seek, SeekFrom};
-#[cfg(feature = "hickory-dns")]
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use url;
-
-#[cfg(feature = "hickory-dns")]
-use once_cell::sync::Lazy;
-
-#[cfg(feature = "hickory-dns")]
-use reqwest_hickory_resolver::HickoryResolver;
-
-#[cfg(feature = "hickory-dns")]
-static GLOBAL_RESOLVER: Lazy<Arc<HickoryResolver>> =
-    Lazy::new(|| Arc::new(HickoryResolver::default()));
 
 static ACCEPT_RANGES_WARNING_SHOWN: AtomicBool = AtomicBool::new(false);
 static FILE_SIZE_INFO_SHOWN: AtomicBool = AtomicBool::new(false);
@@ -72,9 +60,6 @@ impl HttpReader {
             .pool_max_idle_per_host(10)
             .default_headers(headers)
             .redirect(reqwest::redirect::Policy::limited(10));
-
-        #[cfg(feature = "hickory-dns")]
-        let client_builder = client_builder.dns_resolver(GLOBAL_RESOLVER.clone());
 
         let client = client_builder.build()?;
         Ok(client)
