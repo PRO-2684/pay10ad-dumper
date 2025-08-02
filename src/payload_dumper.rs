@@ -1,13 +1,11 @@
-use crate::InstallOperation;
-pub use crate::PartitionUpdate;
+use crate::proto::{InstallOperation, PartitionUpdate, install_operation};
 use crate::ReadSeek;
-use crate::install_operation;
-use crate::module::args::Args;
+use crate::args::Args;
 #[cfg(feature = "differential_ota")]
-use crate::module::patch::bspatch;
-use crate::module::verify::verify_hash;
+use crate::patch::bspatch;
+use crate::verify::verify_hash;
 #[cfg(feature = "differential_ota")]
-use crate::module::verify::verify_old_partition;
+use crate::verify::verify_old_partition;
 use anyhow::{Context, Result, anyhow, bail};
 use bzip2::read::BzDecoder;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};

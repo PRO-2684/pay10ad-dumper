@@ -11,3 +11,9 @@ pub mod structs;
 pub mod utils;
 pub mod verify;
 pub mod zip;
+pub mod proto;
+
+use std::io::{Read, Seek};
+
+pub trait ReadSeek: Read + Seek {}
+impl<T: Read + Seek> ReadSeek for T {}

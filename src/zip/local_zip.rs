@@ -1,4 +1,4 @@
-use crate::module::zip::zip_core::{ZipEntry, ZipParser};
+use crate::zip::zip_core::{ZipEntry, ZipParser};
 use std::collections::HashMap;
 use std::io::{Error, ErrorKind, Read, Result as IoResult, Seek, SeekFrom};
 use std::path::Path;

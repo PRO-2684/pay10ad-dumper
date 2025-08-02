@@ -1,4 +1,4 @@
-use crate::module::utils::format_size;
+use crate::utils::format_size;
 use anyhow::{Context, Result, anyhow};
 use reqwest::{
     blocking::{Client, Response},

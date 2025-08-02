@@ -1,6 +1,5 @@
-use crate::DeltaArchiveManifest;
+use crate::proto::{DeltaArchiveManifest, install_operation};
 use crate::ReadSeek;
-use crate::install_operation;
 use anyhow::{Result, bail};
 use byteorder::{BigEndian, ReadBytesExt};
 use prost::Message;

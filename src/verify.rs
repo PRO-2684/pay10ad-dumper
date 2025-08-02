@@ -1,8 +1,8 @@
-use crate::PartitionUpdate;
+use crate::proto::{PartitionUpdate, PartitionInfo};
 #[cfg(feature = "differential_ota")]
 use crate::ReadSeek;
-use crate::module::args::Args;
-use crate::module::utils::format_size;
+use crate::args::Args;
+use crate::utils::format_size;
 #[cfg(feature = "differential_ota")]
 use anyhow::bail;
 use anyhow::{Context, Result};
@@ -209,7 +209,7 @@ pub fn verify_partition_hash(
 #[cfg(feature = "differential_ota")]
 pub fn verify_old_partition(
     old_file: &mut dyn ReadSeek,
-    old_partition_info: &crate::PartitionInfo,
+    old_partition_info: &PartitionInfo,
 ) -> Result<()> {
     if let Some(expected_hash) = old_partition_info.hash.as_deref() {
         if expected_hash.is_empty() {

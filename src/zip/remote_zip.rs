@@ -1,5 +1,5 @@
-use crate::module::http::HttpReader;
-use crate::module::zip::zip_core::ZipParser;
+use crate::http::HttpReader;
+use crate::zip::zip_core::ZipParser;
 use anyhow::{Result, anyhow};
 use std::io::{self, Read, Seek, SeekFrom};
 

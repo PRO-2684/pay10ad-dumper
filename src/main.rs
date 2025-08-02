@@ -9,20 +9,21 @@
 )]
 #![allow(clippy::too_many_lines, clippy::cognitive_complexity, reason = "TBD")]
 
-mod module;
-use crate::module::args::Args;
+use pay10ad_dumper::args::Args;
 #[cfg(feature = "remote_ota")]
-use crate::module::http::HttpReader;
+use pay10ad_dumper::http::HttpReader;
 #[cfg(feature = "metadata")]
-use crate::module::metadata::save_metadata;
-use crate::module::payload_dumper::{create_payload_reader, dump_partition};
-use crate::module::utils::list_partitions;
-use crate::module::utils::{format_elapsed_time, format_size, is_differential_ota};
-use crate::module::verify::verify_partitions_hash;
+use pay10ad_dumper::metadata::save_metadata;
+use pay10ad_dumper::payload_dumper::{create_payload_reader, dump_partition};
+use pay10ad_dumper::proto::{DeltaArchiveManifest, PartitionUpdate};
+use pay10ad_dumper::utils::list_partitions;
+use pay10ad_dumper::utils::{format_elapsed_time, format_size, is_differential_ota};
+use pay10ad_dumper::verify::verify_partitions_hash;
 #[cfg(feature = "local_zip")]
-use crate::module::zip::local_zip::ZipPayloadReader;
+use pay10ad_dumper::zip::local_zip::ZipPayloadReader;
 #[cfg(feature = "remote_ota")]
-use crate::module::zip::remote_zip::RemoteZipReader;
+use pay10ad_dumper::zip::remote_zip::RemoteZipReader;
+use pay10ad_dumper::ReadSeek;
 use anyhow::{Result, anyhow, bail};
 use byteorder::{BigEndian, ReadBytesExt};
 use clap::Parser;
@@ -43,10 +44,6 @@ use std::time::{Duration, Instant};
 #[cfg(feature = "remote_ota")]
 static FILE_SIZE_INFO_SHOWN: AtomicBool = AtomicBool::new(false);
 
-include!("proto/update_metadata.rs");
-
-trait ReadSeek: Read + Seek {}
-impl<T: Read + Seek> ReadSeek for T {}
 
 fn main() -> Result<()> {
     let args = Args::parse();

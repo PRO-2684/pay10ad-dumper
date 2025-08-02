@@ -1,9 +1,9 @@
-use crate::module::structs::{
+use crate::structs::{
     ApexInfoMetadata, DynamicPartitionGroupInfo, DynamicPartitionInfo, PartitionMetadata,
     PayloadMetadata, VabcFeatureSetInfo,
 };
-use crate::module::utils::format_size;
-use crate::{DeltaArchiveManifest, DynamicPartitionMetadata, install_operation};
+use crate::utils::format_size;
+use crate::proto::{DeltaArchiveManifest, DynamicPartitionMetadata, install_operation};
 use anyhow::Result;
 use serde_json;
 use std::fs;
