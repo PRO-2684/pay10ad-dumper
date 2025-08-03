@@ -40,11 +40,7 @@ cargo install pay10ad-dumper
 - List partitions from `ota.zip`: `pay10ad-dumper -l ota.zip`
 - Extract `boot` & `init_boot` from `<URL>`: `pay10ad-dumper -p boot -p init_boot <URL>`
 
-<details><summary>
-
-📸 Screenshots
-
-</summary>
+<details><summary>📸 Screenshots</summary>
 
 Extracting `init_boot.img` from an online OTA zip file with specified UA:
 
