@@ -22,7 +22,6 @@ use std::{
 
 use anyhow::{Result, anyhow, bail};
 use byteorder::{BigEndian, ReadBytesExt};
-use clap::Parser;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use pay10ad_dumper::{
     ReadSeek,
@@ -44,7 +43,7 @@ use rayon::{
 static FILE_SIZE_INFO_SHOWN: AtomicBool = AtomicBool::new(false);
 
 fn main() -> Result<()> {
-    let args = Args::parse();
+    let args: Args = argh::from_env();
     let thread_count = if args.no_parallel {
         1
     } else if let Some(threads) = args.threads {
@@ -58,7 +57,6 @@ fn main() -> Result<()> {
         .build_global()?;
 
     let start_time = Instant::now();
-
     let multi_progress = MultiProgress::new();
     let main_pb = multi_progress.add(ProgressBar::new_spinner());
     main_pb.set_style(
@@ -67,13 +65,10 @@ fn main() -> Result<()> {
             .unwrap(),
     );
     main_pb.enable_steady_tick(Duration::from_millis(100));
-    let payload_path_str = args.payload_path.to_string_lossy().to_string();
 
-    // Check if it's a URL - only available with remote_ota feature
+    let payload_path_str = args.payload_path.to_string_lossy().to_string();
     let is_url =
         payload_path_str.starts_with("http://") || payload_path_str.starts_with("https://");
-
-    // Check if it's a local ZIP file
     let is_local_zip =
         !is_url && args.payload_path.extension().and_then(|e| e.to_str()) == Some("zip");
 
@@ -92,14 +87,12 @@ fn main() -> Result<()> {
     }
 
     let mut payload_reader: Box<dyn ReadSeek> = if is_url {
-        use std::path::Path;
-
         main_pb.set_message("Initializing remote connection...");
+
         let url = payload_path_str.clone();
-        let is_zip = Path::new(&url)
+        let is_zip = std::path::Path::new(&url)
             .extension()
             .is_some_and(|ext| ext.eq_ignore_ascii_case("zip"));
-
         let content_type = if is_zip {
             None
         } else {
@@ -167,7 +160,6 @@ fn main() -> Result<()> {
             "This appears to be a differential OTA package. Use --diff argument and provide the original partitions directory with --old <path>"
         );
     }
-
     if let Some(security_patch) = &manifest.security_patch_level {
         println!("- Security Patch: {security_patch}");
     }
@@ -175,7 +167,6 @@ fn main() -> Result<()> {
     if args.metadata && !args.list {
         main_pb.set_message("Extracting metadata...");
         let is_stdout = args.out.to_string_lossy() == "-";
-
         match save_metadata(&manifest, &args.out, data_offset) {
             Ok(json) => {
                 if is_stdout {
@@ -202,7 +193,6 @@ fn main() -> Result<()> {
 
         if args.metadata {
             let is_stdout = args.out.to_string_lossy() == "-";
-
             match save_metadata(&manifest, &args.out, data_offset) {
                 Ok(json) => {
                     if is_stdout {
@@ -257,7 +247,6 @@ fn main() -> Result<()> {
     });
     let multi_progress = Arc::new(multi_progress);
     let args = Arc::new(args);
-
     let mut failed_partitions = Vec::new();
 
     if use_parallel {
@@ -271,7 +260,6 @@ fn main() -> Result<()> {
         let max_retries = 3;
         let num_cpus = num_cpus::get();
         let chunk_size = std::cmp::max(1, partitions_to_extract.len() / num_cpus);
-
         let active_readers = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let max_concurrent_readers = num_cpus;
 
@@ -430,13 +418,11 @@ fn main() -> Result<()> {
         main_pb.set_message("Hash verification skipped (--no-verify flag)");
     } else {
         main_pb.set_message("Verifying partition hashes...");
-
         let partitions_to_verify: Vec<&PartitionUpdate> = partitions_to_extract
             .iter()
             .filter(|p| !failed_partitions.contains(&p.partition_name))
             .copied()
             .collect();
-
         let failed_verifications =
             verify_partitions_hash(&partitions_to_verify, &args, &multi_progress);
         if !failed_verifications.is_empty() {
@@ -448,7 +434,6 @@ fn main() -> Result<()> {
     }
 
     let elapsed_time = format_elapsed_time(start_time.elapsed());
-
     if failed_partitions.is_empty() {
         main_pb.finish_with_message(format!(
             "All partitions extracted successfully! (in {elapsed_time})"
