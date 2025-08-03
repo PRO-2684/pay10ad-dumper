@@ -329,7 +329,9 @@ fn main() -> Result<()> {
                                 partition,
                                 data_offset,
                                 u64::from(block_size),
-                                &args,
+                                &args.out,
+                                &args.old,
+                                args.diff,
                                 &mut reader,
                                 Some(&multi_progress),
                             ) {
@@ -382,7 +384,9 @@ fn main() -> Result<()> {
                     partition,
                     data_offset,
                     u64::from(block_size),
-                    &args,
+                    &args.out,
+                    &args.old,
+                    args.diff,
                     &mut reader,
                     Some(&multi_progress),
                 ) {
@@ -401,7 +405,9 @@ fn main() -> Result<()> {
                 partition,
                 data_offset,
                 u64::from(block_size),
-                &args,
+                &args.out,
+                &args.old,
+                args.diff,
                 &mut payload_reader,
                 Some(&multi_progress),
             ) {
@@ -423,8 +429,11 @@ fn main() -> Result<()> {
             .filter(|p| !failed_partitions.contains(&p.partition_name))
             .copied()
             .collect();
-        let failed_verifications =
-            verify_partitions_hash(&partitions_to_verify, &args, &multi_progress);
+        let failed_verifications = if args.no_verify {
+            vec![]
+        } else {
+            verify_partitions_hash(&partitions_to_verify, &args.out, &multi_progress)
+        };
         if !failed_verifications.is_empty() {
             eprintln!(
                 "Hash verification failed for {} partitions.",

@@ -1,7 +1,7 @@
 use std::{
     fs::File,
     io::{Read, SeekFrom},
-    path::PathBuf,
+    path::{Path, PathBuf},
     time::Duration,
 };
 
@@ -13,7 +13,6 @@ use sha2::Sha256;
 
 use crate::{
     ReadSeek,
-    args::Args,
     proto::{PartitionInfo, PartitionUpdate},
     utils::format_size,
 };
@@ -33,13 +32,9 @@ pub fn verify_hash(data: &[u8], expected_hash: &[u8]) -> bool {
 #[must_use]
 pub fn verify_partitions_hash(
     partitions: &[&PartitionUpdate],
-    args: &Args,
+    out_dir: &Path,
     multi_progress: &MultiProgress,
 ) -> Vec<String> {
-    if args.no_verify {
-        return vec![];
-    }
-
     let verification_pb = multi_progress.add(ProgressBar::new_spinner());
     verification_pb.set_style(
         ProgressStyle::default_spinner()
@@ -52,7 +47,6 @@ pub fn verify_partitions_hash(
         partitions.len()
     ));
 
-    let out_dir = &args.out;
     let mut failed_verifications = Vec::new();
     let progress_bars: Vec<_> = partitions
         .iter()

@@ -1,7 +1,7 @@
 use std::{
     fs::{self, File},
     io::{self, Cursor, Read, Seek, SeekFrom, Write},
-    path::PathBuf,
+    path::{Path, PathBuf},
     time::Duration,
 };
 
@@ -13,7 +13,6 @@ use xz4rust::{XzDecoder, XzNextBlockResult};
 
 use crate::{
     ReadSeek,
-    args::Args,
     patch::bspatch,
     proto::{InstallOperation, PartitionUpdate, install_operation},
     verify::{verify_hash, verify_old_partition},
@@ -196,7 +195,9 @@ pub fn dump_partition(
     partition: &PartitionUpdate,
     data_offset: u64,
     block_size: u64,
-    args: &Args,
+    out_dir: &Path,
+    old_dir: &Path,
+    use_diff: bool,
     payload_file: &mut (impl Read + Seek),
     multi_progress: Option<&MultiProgress>,
 ) -> Result<()> {
@@ -212,8 +213,7 @@ pub fn dump_partition(
         pb.set_message(format!("Processing {partition_name} ({total_ops} ops)"));
         Some(pb)
     });
-    let out_dir = &args.out;
-    if args.out.to_string_lossy() != "-" {
+    if out_dir.to_string_lossy() != "-" {
         fs::create_dir_all(out_dir)?;
     }
     let out_path = out_dir.join(format!("{partition_name}.img"));
@@ -232,8 +232,8 @@ pub fn dump_partition(
         }
     }
 
-    let mut old_file = if args.diff {
-        let old_path = args.old.join(format!("{partition_name}.img"));
+    let mut old_file = if use_diff {
+        let old_path = old_dir.join(format!("{partition_name}.img"));
         let mut file = File::open(&old_path)
             .with_context(|| format!("Failed to open original image: {}", old_path.display()))?;
 
