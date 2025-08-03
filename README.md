@@ -12,7 +12,7 @@ Feature-rich Android OTA payload dumper written in Rust.
 - Extract from **HTTP(S) URL** (`payload.bin` or zip) without downloading the whole file (Need server support)
 - Verify output partitions
 - Parallelism to maximize speed (Customizable via `--no-parallel`/`--threads`)
-- Tiny: < 1M compressed on all supported platforms (Windows, MacOS, Linux)
+- Tiny: < 1M compressed on all common platforms (Windows, MacOS, Linux)
 
 ## 📥 Installation
 
@@ -104,9 +104,9 @@ Options:
 | - | - | - | - | - | - |
 | [`vm03/payload_dumper`](https://github.com/vm03/payload_dumper) | 🐍 Python | 🔴 | 🔴 | 🔴 | N/A |
 | [`5ec1cff/payload-dumper`](https://github.com/5ec1cff/payload-dumper) | 🐍 Python | 🟢 | 🟢 | 🟡 | N/A |
-| [`payload-dumper-go`](https://github.com/ssut/payload-dumper-go) | 🐹 Go | 🟢 | 🔴 | 🔴 | ≈5M |
-| [`payload-dumper-rust`](https://github.com/rhythmcache/payload-dumper-rust) | 🦀 Rust | 🟢 | 🟢 | 🟢 | ≈2M |
-| [`pay10ad-dumper`](https://github.com/PRO-2684/pay10ad-dumper) | 🦀 Rust | 🟢 | 🟢 | 🟢 | ≈1.5M |
+| [`payload-dumper-go`](https://github.com/ssut/payload-dumper-go) | 🐹 Go | 🟢 | 🔴 | 🔴 | ≈5.5M |
+| [`payload-dumper-rust`](https://github.com/rhythmcache/payload-dumper-rust) | 🦀 Rust | 🟢 | 🟢 | 🟢 | ≈3.5M |
+| [`pay10ad-dumper`](https://github.com/PRO-2684/pay10ad-dumper) | 🦀 Rust | 🟢 | 🟢 | 🟢 | ≈2M |
 
 Additional explanation:
 
@@ -114,7 +114,7 @@ Additional explanation:
     - `Zip`: Whether it supports extracting partitions from ZIP archives without decompressing it first.
     - `URL`: Whether it supports extracting partitions from `payload.bin` URLs without downloading the whole file.
     - `URL + Zip`: Whether it supports extracting partitions from `ota.zip` URLs without downloading the whole file.
-    - `Size`: Compiled executable size (decompressed).
+    - `Size`: Executable size on Linux, decompressed.
 - Values
     - `🔴`: No
     - `🟢`: Yes
@@ -124,7 +124,7 @@ Additional explanation:
 
 - [ ] Async
 - [ ] Better errors
-- [ ] Use another CLI parser
+- [x] Use another CLI parser
 - [ ] Customize HTTP headers
 
 ## 🎉 Credits
