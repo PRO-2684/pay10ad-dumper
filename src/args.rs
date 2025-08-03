@@ -1,57 +1,58 @@
 use std::path::PathBuf;
 
-use clap::Parser;
+use argh::FromArgs;
 
-#[allow(clippy::struct_excessive_bools, reason = "Clap")]
-#[derive(Parser)]
-#[command(version, about, long_about = None)]
-#[command(next_line_help = true)]
+#[allow(clippy::struct_excessive_bools, reason = "CLI")]
+#[derive(FromArgs)]
+/// Feature-rich Android OTA payload dumper written in Rust
 pub struct Args {
-    /// Path or URL to your payload
+    /// path or URL to your payload
+    #[argh(positional)]
     pub payload_path: PathBuf,
 
-    /// Output directory for extracted partitions
-    #[arg(long, short, default_value = "output")]
+    /// output directory for extracted partitions
+    #[argh(option, short = 'o', default = "\"output\".into()")]
     pub out: PathBuf,
 
-    /// Enable differential OTA mode (requires --old)
-    #[arg(long)]
+    /// enable differential OTA mode (requires --old)
+    #[argh(switch)]
     pub diff: bool,
 
-    /// Path to the directory containing old partition images (required for --diff)
-    #[arg(long, default_value = "old")]
+    /// path to the directory containing old partition images (required for --diff)
+    #[argh(option, default = "\"old\".into()")]
     pub old: PathBuf,
 
-    /// List of partition names to extract
-    #[arg(long, short)]
+    /// list of partition names to extract
+    #[argh(option, short = 'p')]
     pub partitions: Vec<String>,
 
-    /// Number of threads to use for parallel processing
-    #[arg(long)]
+    /// number of threads to use for parallel processing
+    #[argh(option)]
     pub threads: Option<usize>,
 
-    /// List available partitions in the payload
-    #[arg(long, conflicts_with_all = &["diff", "old", "partitions", "threads"])]
+    /// list available partitions in the payload
+    // TODO: Conflict with ["diff", "old", "partitions", "threads"]
+    #[argh(switch, short = 'l')]
     pub list: bool,
 
-    /// Save complete metadata as JSON (use --out - to write to stdout)
-    #[arg(long, conflicts_with_all = &["diff", "old", "partitions"])]
+    /// save complete metadata as JSON (use --out - to write to stdout)
+    // TODO: Conflict with ["diff", "old", "partitions"]
+    #[argh(switch)]
     pub metadata: bool,
 
-    /// Disable parallel extraction
-    #[arg(long)]
+    /// disable parallel extraction
+    #[argh(switch)]
     pub no_parallel: bool,
 
-    /// Skip hash verification
-    #[arg(long)]
+    /// skip hash verification
+    #[argh(switch)]
     pub no_verify: bool,
 
-    /// User-Agent to use if extracting from URL (Defaults to a representative browser UA)
-    #[arg(
-        long,
-        short,
-        default_value = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        hide_default_value = true
+    /// the User-Agent to use if extracting from URL (Defaults to a representative browser UA)
+    #[argh(
+        option,
+        short = 'u',
+        default = "\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36\".into()"
     )]
     pub user_agent: String,
 }

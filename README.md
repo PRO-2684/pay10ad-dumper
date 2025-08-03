@@ -73,36 +73,29 @@ cargo install pay10ad-dumper
 ### CLI Reference
 
 ```shell
-$ pay10ad-dumper
+$ pay10ad-dumper --help
+Usage: pay10ad-dumper <payload_path> [-o <out>] [--diff] [--old <old>] [--partitions <partitions...>] [--threads <threads>] [--list] [--metadata] [--no-parallel] [--no-verify] [-u <user-agent>]
+
 Feature-rich Android OTA payload dumper written in Rust
 
-Usage: pay10ad-dumper [OPTIONS] <PAYLOAD_PATH>
-
-Arguments:
-  <PAYLOAD_PATH>
-          Path or URL to your payload
+Positional Arguments:
+  payload_path      path or URL to your payload
 
 Options:
-  -o, --out <OUT>
-          Output directory for extracted partitions [default: output]
-  -p, --partitions <PARTITIONS>
-          List of partition names to extract
-      --threads <THREADS>
-          Number of threads to use for parallel processing
-  -l, --list
-          List available partitions in the payload
-      --metadata
-          Save complete metadata as JSON (use --out - to write to stdout)
-      --no-parallel
-          Disable parallel extraction
-      --no-verify
-          Skip hash verification
-  -u, --user-agent <USER_AGENT>
-          User-Agent to use (Only takes effect when providing URL) [default: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"]
-  -h, --help
-          Print help
-  -V, --version
-          Print version
+  -o, --out         output directory for extracted partitions
+  --diff            enable differential OTA mode (requires --old)
+  --old             path to the directory containing old partition images
+                    (required for --diff)
+  --partitions      list of partition names to extract
+  --threads         number of threads to use for parallel processing
+  --list            list available partitions in the payload
+  --metadata        save complete metadata as JSON (use --out - to write to
+                    stdout)
+  --no-parallel     disable parallel extraction
+  --no-verify       skip hash verification
+  -u, --user-agent  the User-Agent to use if extracting from URL (Defaults to a
+                    representative browser UA)
+  --help, help      display usage information
 ```
 
 ## 🤔 Comparison
