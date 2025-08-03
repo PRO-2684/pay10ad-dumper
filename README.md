@@ -42,29 +42,19 @@ cargo install pay10ad-dumper
 
 <details><summary>
 
-📸 Screenshot of `pay10ad-dumper` extracting `init_boot.img` from an online OTA zip file with specified UA
+📸 Screenshots
 
 </summary>
+
+Extracting `init_boot.img` from an online OTA zip file with specified UA:
 
 ![sample-remote-zip.png](images/sample-remote-zip.png)
 
-</details>
-
-<details><summary>
-
-📸 Screenshot of `pay10ad-dumper` listing partitions from local `payload.bin`
-
-</summary>
+Listing partitions from local `payload.bin`:
 
 ![sample-local-list](images/sample-local-list.png)
 
-</details>
-
-<details><summary>
-
-📸 Screenshot of `pay10ad-dumper` listing partitions from remote `ota.zip`
-
-</summary>
+Listing partitions from remote `ota.zip`:
 
 ![sample-remote-list](images/sample-remote-list.png)
 
@@ -108,7 +98,7 @@ Options:
 | [`payload-dumper-rust`](https://github.com/rhythmcache/payload-dumper-rust) | 🦀 Rust | 🟢 | 🟢 | 🟢 | ≈3.5M |
 | [`pay10ad-dumper`](https://github.com/PRO-2684/pay10ad-dumper) | 🦀 Rust | 🟢 | 🟢 | 🟢 | ≈2M |
 
-Additional explanation:
+<details><summary>Specification</summary>
 
 - Heading
     - `Zip`: Whether it supports extracting partitions from ZIP archives without decompressing it first.
@@ -119,6 +109,8 @@ Additional explanation:
     - `🔴`: No
     - `🟢`: Yes
     - `🟡`: Not tested
+
+</details>
 
 ## 🛣️ Todo
 
