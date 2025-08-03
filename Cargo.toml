@@ -1,6 +1,6 @@
 [package]
 name = "pay10ad-dumper"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2024"
 readme = "README.md"
 description = "Feature-rich Android OTA payload dumper written in Rust"
@@ -27,7 +27,7 @@ num_cpus = "1.17.0"
 hex = "0.4.3"
 xz4rust = "0.2.1"
 serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.141"
+serde_json = "1.0.142"
 bsdiff = "0.2.1"
 reqwest = { version = "0.12.22", default-features = false, features = [
     "default-tls",
